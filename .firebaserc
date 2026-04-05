@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "khanbari-somety",
+    "staging": "khanbari-somety"
+  },
+  "targets": {},
+  "etags": {}
+}

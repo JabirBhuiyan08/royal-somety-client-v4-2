@@ -1,0 +1,124 @@
+// client/src/providers/AuthProvider.jsx
+import { createContext, useContext, useEffect, useState, useRef } from 'react';
+import { auth } from '../utils/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import api from '../utils/api';
+import toast from 'react-hot-toast';
+
+const AuthContext = createContext(null);
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser]       = useState(null);
+  const [dbUser, setDbUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const isInitialized = useRef(false);
+  const lastAuthAttempt = useRef(0);
+
+  // Validate token and get user data from backend
+  const validateToken = async (token) => {
+    try {
+      const res = await api.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+      return res.data.user;
+    } catch (err) {
+      console.error('Token validation failed:', err.message);
+      return null;
+    }
+  };
+
+  // Sync Firebase user with backend
+  const syncUser = async (firebaseUser) => {
+    try {
+      const token = await firebaseUser.getIdToken(true);
+      localStorage.setItem('token', token);
+      const syncRes = await api.post(
+        '/auth/sync',
+        { uid: firebaseUser.uid, name: firebaseUser.displayName || 'সদস্য', email: firebaseUser.email, photoURL: firebaseUser.photoURL || null },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return syncRes.data.user;
+    } catch (err) {
+      console.error('Auth sync error:', err.message);
+      // Try fallback - validate existing token
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        return await validateToken(storedToken);
+      }
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    // Prevent multiple auth attempts in short period (debounce)
+    const now = Date.now();
+    if (now - lastAuthAttempt.current < 1000) {
+      return;
+    }
+    lastAuthAttempt.current = now;
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (isInitialized.current) return; // Prevent duplicate calls
+      isInitialized.current = true;
+
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        const syncedDbUser = await syncUser(firebaseUser);
+        setDbUser(syncedDbUser);
+      } else {
+        // No Firebase user - check if we have a valid stored token
+        const storedToken = localStorage.getItem('token');
+        if (storedToken) {
+          const validatedUser = await validateToken(storedToken);
+          if (validatedUser) {
+            setDbUser(validatedUser);
+            // Note: Firebase user will be null but we have valid backend session
+          } else {
+            setUser(null); setDbUser(null); localStorage.removeItem('token');
+          }
+        } else {
+          setUser(null); setDbUser(null);
+        }
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Refresh token every 50 min (expires after 60)
+  useEffect(() => {
+    if (!user) return;
+    const t = setInterval(async () => {
+      try { 
+        const newToken = await user.getIdToken(true);
+        localStorage.setItem('token', newToken);
+      } catch { 
+        // Token refresh failed - user may need to re-login
+        console.warn('Token refresh failed'); 
+      }
+    }, 50 * 60 * 1000);
+    return () => clearInterval(t);
+  }, [user]);
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch { /* ignore Firebase sign out errors */ }
+    localStorage.removeItem('token');
+    setUser(null); setDbUser(null);
+    isInitialized.current = false; // Reset to allow re-auth
+    toast.success('লগআউট সফল হয়েছে');
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, dbUser, loading, logout, isAdmin: dbUser?.role === 'admin', setDbUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+};
+
+export default AuthContext;
