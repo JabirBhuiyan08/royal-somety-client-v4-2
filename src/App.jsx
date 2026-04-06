@@ -25,9 +25,12 @@ import AdminNotifications from './pages/AdminNotifications';
 import AdminSettings from './pages/AdminSettings';
 
 const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, dbUser, loading } = useAuth();
   if (loading) return <LoadingScreen />;
-  if (!user) return <Navigate to="/login" replace />;
+  // Allow access if either:
+  // 1. User has Firebase auth AND synced dbUser, OR
+  // 2. User has valid dbUser from token (Firebase session may have expired but token still valid)
+  if (!dbUser) return <Navigate to="/login" replace />;
   return children;
 };
 
@@ -36,8 +39,8 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public */}
-      <Route path="/login"  element={user ? <Navigate to="/" /> : <Login />} />
-      <Route path="/signup" element={user ? <Navigate to="/" /> : <Signup />} />
+      <Route path="/login"  element={user ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/signup" element={user ? <Navigate to="/" replace /> : <Signup />} />
 
       {/* Member layout */}
       <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
