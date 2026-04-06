@@ -1,5 +1,5 @@
 // client/src/providers/AuthProvider.jsx
-import { createContext, useContext, useEffect, useState, useRef } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from '../utils/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import api from '../utils/api';
@@ -11,8 +11,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser]       = useState(null);
   const [dbUser, setDbUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const isInitialized = useRef(false);
-  const lastAuthAttempt = useRef(0);
 
   // Validate token and get user data from backend
   const validateToken = async (token) => {
@@ -48,17 +46,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Prevent multiple auth attempts in short period (debounce)
-    const now = Date.now();
-    if (now - lastAuthAttempt.current < 1000) {
-      return;
-    }
-    lastAuthAttempt.current = now;
-
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (isInitialized.current) return; // Prevent duplicate calls
-      isInitialized.current = true;
-
+      // Always process auth state changes, but avoid duplicate processing during initial load
       if (firebaseUser) {
         setUser(firebaseUser);
         const syncedDbUser = await syncUser(firebaseUser);
@@ -104,7 +93,6 @@ export const AuthProvider = ({ children }) => {
     } catch { /* ignore Firebase sign out errors */ }
     localStorage.removeItem('token');
     setUser(null); setDbUser(null);
-    isInitialized.current = false; // Reset to allow re-auth
     toast.success('লগআউট সফল হয়েছে');
   };
 

@@ -1,10 +1,11 @@
 // client/src/pages/Login.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../utils/firebase';
 import { Eye, EyeOff, Phone, Lock, LogIn, Crown } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../providers/AuthProvider';
 
 const Login = () => {
   const [phone, setPhone] = useState('');
@@ -12,6 +13,14 @@ const Login = () => {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, dbUser, loading: authLoading } = useAuth();
+
+  // Redirect if already logged in (after auth is fully loaded)
+  useEffect(() => {
+    if (!authLoading && user && dbUser) {
+      navigate('/', { replace: true });
+    }
+  }, [user, dbUser, authLoading, navigate]);
 
   // Format phone as email (Firebase requires email format for authentication)
   const formatPhoneAsEmail = (value) => {

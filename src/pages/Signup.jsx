@@ -1,5 +1,5 @@
 // client/src/pages/Signup.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../utils/firebase';
@@ -7,6 +7,7 @@ import api from '../utils/api';
 import { Eye, EyeOff, User, Phone, Droplet, Lock, LogIn, Crown, Shield } from 'lucide-react';
 import { BLOOD_GROUPS } from '../utils/constants';
 import toast from 'react-hot-toast';
+import { useAuth } from '../providers/AuthProvider';
 
 const Signup = () => {
   const [form, setForm] = useState({ name: '', phone: '', bloodGroup: '' });
@@ -15,6 +16,14 @@ const Signup = () => {
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, dbUser, loading: authLoading } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user && dbUser) {
+      navigate('/', { replace: true });
+    }
+  }, [user, dbUser, authLoading, navigate]);
 
   // Format phone as email (Firebase requires email format for authentication)
   const formatPhoneAsEmail = (value) => {
