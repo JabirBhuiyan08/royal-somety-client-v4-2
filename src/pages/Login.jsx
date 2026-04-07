@@ -153,7 +153,7 @@ const Login = () => {
             ) : (
               <>
                 <LogIn size={18} />
-                <span>লগইন করুন</span>
+                <span>লগইন করুন...</span>
               </>
             )}
           </button>
