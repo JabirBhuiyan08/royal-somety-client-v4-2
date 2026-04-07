@@ -8,10 +8,13 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
+    port: 5173,
     proxy: {
       '/api': {
-        target: 'https://royal-somety-server-v4.vercel.app',
+        target: 'http://127.0.0.1:5000',
         changeOrigin: true,
+        secure: false,
+        ws: true,
       }
     }
   }
