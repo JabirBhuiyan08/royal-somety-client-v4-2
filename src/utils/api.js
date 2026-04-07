@@ -8,6 +8,14 @@ const api = axios.create({
   timeout: 10000,
 });
 
+let isRedirecting = false;
+let suppressRedirect = false;
+
+export const suppressAuthRedirect = (fn) => {
+  suppressRedirect = true;
+  return fn().finally(() => { suppressRedirect = false; });
+};
+
 // Attach token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -18,16 +26,13 @@ api.interceptors.request.use((config) => {
 });
 
 // Handle 401 - don't hard redirect to prevent login loop
-let isRedirecting = false;
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 && !isRedirecting) {
+    if (err.response?.status === 401 && !isRedirecting && !suppressRedirect) {
       isRedirecting = true;
       localStorage.removeItem('token');
-      // Use a small delay to prevent rapid redirect loops
       setTimeout(() => {
-        // Only redirect if we're not already on login page
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login';
         }

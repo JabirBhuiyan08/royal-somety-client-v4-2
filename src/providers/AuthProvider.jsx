@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from '../utils/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import api from '../utils/api';
+import api, { suppressAuthRedirect } from '../utils/api';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext(null);
@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   const validateToken = async (token) => {
     try {
       console.log('[Auth] Validating token...');
-      const res = await api.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await suppressAuthRedirect(() => api.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } }));
       console.log('[Auth] Token valid, user data:', res.data.user);
       return res.data.user;
     } catch (err) {
@@ -27,20 +27,33 @@ export const AuthProvider = ({ children }) => {
 
   // Sync Firebase user with backend
   const syncUser = async (firebaseUser) => {
+    const token = await firebaseUser.getIdToken(true);
+    localStorage.setItem('token', token);
+    console.log('[Auth] Syncing user with backend, token obtained');
+
     try {
-      const token = await firebaseUser.getIdToken(true);
-      localStorage.setItem('token', token);
-      console.log('[Auth] Syncing user with backend, token obtained');
-      const syncRes = await api.post(
+      const syncRes = await suppressAuthRedirect(() => api.post(
         '/auth/sync',
         { uid: firebaseUser.uid, name: firebaseUser.displayName || 'সদস্য', email: firebaseUser.email, photoURL: firebaseUser.photoURL || null },
         { headers: { Authorization: `Bearer ${token}` } }
-      );
+      ));
       console.log('[Auth] Sync response:', syncRes.data);
       return syncRes.data.user;
     } catch (err) {
       console.error('[Auth] Sync error:', err.message, err.response?.status);
-      // Try fallback - validate existing token
+      if (err.response?.status === 401 || err.response?.status === 404) {
+        console.log('[Auth] Sync endpoint failed, attempting register as fallback');
+        try {
+          const registerRes = await suppressAuthRedirect(() => api.post('/auth/register',
+            { uid: firebaseUser.uid, name: firebaseUser.displayName || 'সদস্য', phone: firebaseUser.email?.split('@')[0] || '' },
+            { headers: { Authorization: `Bearer ${token}` } }
+          ));
+          console.log('[Auth] Register fallback response:', registerRes.data);
+          return registerRes.data.user;
+        } catch (registerErr) {
+          console.error('[Auth] Register fallback also failed:', registerErr.message);
+        }
+      }
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         console.log('[Auth] Trying fallback token validation');
