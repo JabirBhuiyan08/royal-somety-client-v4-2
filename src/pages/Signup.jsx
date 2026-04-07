@@ -1,9 +1,9 @@
 // client/src/pages/Signup.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../utils/firebase';
-import api from '../utils/api';
+import api, { suppressAuthRedirect } from '../utils/api';
 import { Eye, EyeOff, User, Phone, Droplet, Lock, LogIn, Crown, Shield } from 'lucide-react';
 import { BLOOD_GROUPS } from '../utils/constants';
 import toast from 'react-hot-toast';
@@ -17,6 +17,7 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user, dbUser, loading: authLoading } = useAuth();
+  const registeredRef = useRef(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -47,19 +48,24 @@ const Signup = () => {
       return;
     }
     setLoading(true);
+    registeredRef.current = false;
     try {
       const emailAsPhone = formatPhoneAsEmail(form.phone);
       const cred = await createUserWithEmailAndPassword(auth, emailAsPhone, pin);
       await updateProfile(cred.user, { displayName: form.name });
       
       const token = await cred.user.getIdToken();
-      await api.post('/auth/register', { 
+      
+      // Use suppressAuthRedirect to prevent redirect loops during registration
+      await suppressAuthRedirect(() => api.post('/auth/register', { 
         uid: cred.user.uid, 
         name: form.name, 
         phone: form.phone, 
         bloodGroup: form.bloodGroup 
       },
-        { headers: { Authorization: `Bearer ${token}` } });
+        { headers: { Authorization: `Bearer ${token}` } }));
+      
+      registeredRef.current = true;
       toast.success('নিবন্ধন সফল! স্বাগতম!');
       navigate('/');
     } catch (err) {

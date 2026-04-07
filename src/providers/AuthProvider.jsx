@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }) => {
     const token = await firebaseUser.getIdToken(true);
     localStorage.setItem('token', token);
     console.log('[Auth] Syncing user with backend, token obtained');
+    console.log('[Auth] Token (first 50 chars):', token.substring(0, 50) + '...');
 
     try {
       const syncRes = await suppressAuthRedirect(() => api.post(
@@ -40,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       console.log('[Auth] Sync response:', syncRes.data);
       return syncRes.data.user;
     } catch (err) {
-      console.error('[Auth] Sync error:', err.message, err.response?.status);
+      console.error('[Auth] Sync error:', err.message, err.response?.status, err.response?.data);
       if (err.response?.status === 401 || err.response?.status === 404) {
         console.log('[Auth] Sync endpoint failed, attempting register as fallback');
         try {
@@ -51,7 +52,7 @@ export const AuthProvider = ({ children }) => {
           console.log('[Auth] Register fallback response:', registerRes.data);
           return registerRes.data.user;
         } catch (registerErr) {
-          console.error('[Auth] Register fallback also failed:', registerErr.message);
+          console.error('[Auth] Register fallback also failed:', registerErr.message, registerErr.response?.data);
         }
       }
       const storedToken = localStorage.getItem('token');
