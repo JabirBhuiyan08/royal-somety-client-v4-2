@@ -15,10 +15,12 @@ export const AuthProvider = ({ children }) => {
   // Validate token and get user data from backend
   const validateToken = async (token) => {
     try {
+      console.log('[Auth] Validating token...');
       const res = await api.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+      console.log('[Auth] Token valid, user data:', res.data.user);
       return res.data.user;
     } catch (err) {
-      console.error('Token validation failed:', err.message);
+      console.error('[Auth] Token validation failed:', err.message, err.response?.status);
       return null;
     }
   };
@@ -28,45 +30,58 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = await firebaseUser.getIdToken(true);
       localStorage.setItem('token', token);
+      console.log('[Auth] Syncing user with backend, token obtained');
       const syncRes = await api.post(
         '/auth/sync',
         { uid: firebaseUser.uid, name: firebaseUser.displayName || 'সদস্য', email: firebaseUser.email, photoURL: firebaseUser.photoURL || null },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      console.log('[Auth] Sync response:', syncRes.data);
       return syncRes.data.user;
     } catch (err) {
-      console.error('Auth sync error:', err.message);
+      console.error('[Auth] Sync error:', err.message, err.response?.status);
       // Try fallback - validate existing token
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
+        console.log('[Auth] Trying fallback token validation');
         return await validateToken(storedToken);
       }
+      console.log('[Auth] No stored token, returning null');
       return null;
     }
   };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('[Auth] onAuthStateChanged triggered, firebaseUser:', firebaseUser ? 'exists' : 'null');
       // Always process auth state changes, but avoid duplicate processing during initial load
       if (firebaseUser) {
         setUser(firebaseUser);
+        console.log('[Auth] Firebase user set, syncing with backend...');
         const syncedDbUser = await syncUser(firebaseUser);
+        console.log('[Auth] Synced dbUser:', syncedDbUser);
         setDbUser(syncedDbUser);
       } else {
+        console.log('[Auth] No Firebase user, checking stored token...');
         // No Firebase user - check if we have a valid stored token
         const storedToken = localStorage.getItem('token');
         if (storedToken) {
           const validatedUser = await validateToken(storedToken);
           if (validatedUser) {
+            console.log('[Auth] Token validated, dbUser:', validatedUser);
             setDbUser(validatedUser);
             // Note: Firebase user will be null but we have valid backend session
           } else {
+            console.log('[Auth] Token validation failed, clearing auth');
             setUser(null); setDbUser(null); localStorage.removeItem('token');
           }
         } else {
+          console.log('[Auth] No stored token, user not authenticated');
           setUser(null); setDbUser(null);
         }
       }
+      // Only set loading to false after initial auth check is complete
+      console.log('[Auth] Setting loading to false');
       setLoading(false);
     });
     return () => unsubscribe();

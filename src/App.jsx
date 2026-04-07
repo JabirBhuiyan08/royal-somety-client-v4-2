@@ -26,21 +26,42 @@ import AdminSettings from './pages/AdminSettings';
 
 const ProtectedRoute = ({ children }) => {
   const { user, dbUser, loading } = useAuth();
-  if (loading) return <LoadingScreen />;
+  console.log('[ProtectedRoute] State:', { user: !!user, dbUser: !!dbUser, loading });
+  if (loading) {
+    console.log('[ProtectedRoute] Loading, showing LoadingScreen');
+    return <LoadingScreen />;
+  }
   // Allow access if either:
   // 1. User has Firebase auth AND synced dbUser, OR
   // 2. User has valid dbUser from token (Firebase session may have expired but token still valid)
-  if (!dbUser) return <Navigate to="/login" replace />;
+  if (!dbUser) {
+    console.log('[ProtectedRoute] No dbUser, redirecting to /login');
+    return <Navigate to="/login" replace />;
+  }
+  console.log('[ProtectedRoute] Rendering protected content');
+  return children;
+};
+
+// Redirect to home if already logged in
+const AlreadyLoggedInRoute = ({ children }) => {
+  const { user, dbUser, loading } = useAuth();
+  console.log('[AlreadyLoggedInRoute] State:', { user: !!user, dbUser: !!dbUser, loading });
+  if (loading) {
+    return <LoadingScreen />;
+  }
+  if (user && dbUser) {
+    console.log('[AlreadyLoggedInRoute] User logged in, redirecting to /');
+    return <Navigate to="/" replace />;
+  }
   return children;
 };
 
 const AppRoutes = () => {
-  const { user } = useAuth();
   return (
     <Routes>
       {/* Public */}
-      <Route path="/login"  element={user ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/signup" element={user ? <Navigate to="/" replace /> : <Signup />} />
+      <Route path="/login"  element={<AlreadyLoggedInRoute><Login /></AlreadyLoggedInRoute>} />
+      <Route path="/signup" element={<AlreadyLoggedInRoute><Signup /></AlreadyLoggedInRoute>} />
 
       {/* Member layout */}
       <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>

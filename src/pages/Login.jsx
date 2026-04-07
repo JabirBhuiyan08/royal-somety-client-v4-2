@@ -12,15 +12,31 @@ const Login = () => {
   const [pin, setPin] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
   const navigate = useNavigate();
   const { user, dbUser, loading: authLoading } = useAuth();
 
   // Redirect if already logged in (after auth is fully loaded)
+  // Also handle redirect after successful login once dbUser is synced
   useEffect(() => {
-    if (!authLoading && user && dbUser) {
-      navigate('/', { replace: true });
+    console.log('[Login] useEffect triggered:', { user: !!user, dbUser: !!dbUser, authLoading, justLoggedIn });
+    // Skip during initial auth loading
+    if (authLoading) {
+      console.log('[Login] Auth loading, skipping redirect');
+      return;
     }
-  }, [user, dbUser, authLoading, navigate]);
+    
+    // If user exists and dbUser is synced, redirect to home
+    if (user && dbUser) {
+      console.log('[Login] User and dbUser exist, navigating to home');
+      if (justLoggedIn) {
+        toast.success('লগইন সফল!');
+      }
+      navigate('/', { replace: true });
+    } else {
+      console.log('[Login] Missing user or dbUser, staying on login');
+    }
+  }, [user, dbUser, authLoading, navigate, justLoggedIn]);
 
   // Format phone as email (Firebase requires email format for authentication)
   const formatPhoneAsEmail = (value) => {
@@ -40,16 +56,21 @@ const Login = () => {
       return;
     }
     setLoading(true);
+    setJustLoggedIn(true);
+    console.log('[Login] Attempting login with phone:', phone);
     try {
       const emailAsPhone = formatPhoneAsEmail(phone);
+      console.log('[Login] Calling Firebase signInWithEmailAndPassword');
       await signInWithEmailAndPassword(auth, emailAsPhone, pin);
-      toast.success('লগইন সফল!');
-      navigate('/');
+      console.log('[Login] Firebase login successful');
+      // Don't navigate here - AuthProvider's onAuthStateChanged will update state
+      // and the useEffect above will handle redirect once dbUser is synced
+      // This ensures we wait for the backend sync to complete before showing the home page
     } catch (err) {
-      console.error(err);
+      console.error('[Login] Firebase login error:', err.code, err.message);
       toast.error('ফোন নম্বর বা পিন ভুল');
-    } finally {
       setLoading(false);
+      setJustLoggedIn(false); // Reset flag on error so we don't show success toast
     }
   };
 
