@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import useAxios from '../hooks/useAxios';
 import { Search, Phone, Heart, Users } from 'lucide-react';
 import { BLOOD_GROUPS } from '../utils/constants';
+import { useAuth } from '../providers/AuthProvider';
 
 const bloodColors = {
   'A+':'#dc2626','A-':'#ea580c','B+':'#9333ea','B-':'#7c3aed',
@@ -12,6 +13,7 @@ const bloodColors = {
 
 const Emergency = () => {
   const axios = useAxios();
+  const { dbUser } = useAuth();
   const [search, setSearch] = useState('');
   const [filterBlood, setFilterBlood] = useState('');
 
@@ -33,9 +35,19 @@ const Emergency = () => {
         <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
           <Heart size={20} className="text-red-600" />
         </div>
-        <div>
+        <div className="flex-1">
           <h2 className="text-base font-bold text-gray-800">জরুরি যোগাযোগ</h2>
           <p className="text-xs text-gray-500">সদস্যদের সাথে সরাসরি যোগাযোগ করুন</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {dbUser?.memberId && (
+            <span className="text-xs text-gray-400 font-mono">{dbUser.memberId}</span>
+          )}
+          {dbUser?.bloodGroup && (
+            <div className="px-3 py-1.5 rounded-lg bg-red-100 text-red-600 text-sm font-bold">
+              🩸 {dbUser.bloodGroup}
+            </div>
+          )}
         </div>
       </div>
 

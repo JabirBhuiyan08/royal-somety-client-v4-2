@@ -30,6 +30,11 @@ const Login = () => {
     // If user exists and dbUser is synced, redirect to home
     if (user && dbUser) {
       console.log('[Login] User and dbUser exist, navigating to home');
+      // Clear timeout on success
+      if (window.__loginTimeout) {
+        clearTimeout(window.__loginTimeout);
+        window.__loginTimeout = null;
+      }
       if (justLoggedIn) {
         toast.success('লগইন সফল!');
       }
@@ -64,12 +69,49 @@ const Login = () => {
       console.log('[Login] Calling Firebase signInWithEmailAndPassword');
       await signInWithEmailAndPassword(auth, emailAsPhone, pin);
       console.log('[Login] Firebase login successful');
+      
+      // Add timeout fallback - if backend sync doesn't complete in 10s, show error
+      const syncTimeout = setTimeout(() => {
+        console.log('[Login] Backend sync timeout check');
+        // Will be handled by AuthProvider, but we reset loading state here for safety
+        if (justLoggedIn) {
+          console.log('[Login] Backend sync timeout, resetting state');
+          toast.error('সার্ভার সংযোগ নেই, আবার চেষ্টা করুন');
+          setLoading(false);
+          setJustLoggedIn(false);
+        }
+      }, 15000);
+      
+      // Store timeout ID to clear on success
+      window.__loginTimeout = syncTimeout;
       // Don't navigate here - AuthProvider's onAuthStateChanged will update state
       // and the useEffect above will handle redirect once dbUser is synced
       // This ensures we wait for the backend sync to complete before showing the home page
     } catch (err) {
       console.error('[Login] Firebase login error:', err.code, err.message);
-      toast.error('ফোন নম্বর বা পিন ভুল');
+      
+      // Friendly error messages based on Firebase error codes
+      let errorMessage = 'ফোন নম্বর বা পিন ভুল';
+      
+      if (err.code === 'auth/invalid-credential') {
+        errorMessage = 'ফোন নম্বর বা পিন ভুল';
+      } else if (err.code === 'auth/user-not-found') {
+        errorMessage = 'অ্যাকাউন্ট পাওয়া যায়নি';
+      } else if (err.code === 'auth/wrong-password') {
+        errorMessage = 'পিন ভুল হয়েছে';
+      } else if (err.code === 'auth/user-disabled') {
+        errorMessage = 'অ্যাকাউন্ট বন্ধ আছে';
+      } else if (err.code === 'auth/too-many-requests') {
+        errorMessage = 'অনেকবার চেষ্টা করেছেন, একটু পরে চেষ্টা করুন';
+      } else if (err.code === 'auth/network-request-failed') {
+        errorMessage = 'ইন্টারনেট সংযোগ নেই';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'ফোন নম্বর সঠিক নয়';
+      } else {
+        errorMessage = 'কিছু সমস্যা হয়েছে, আবার চেষ্টা করুন';
+      }
+      
+      toast.error(errorMessage);
       setLoading(false);
       setJustLoggedIn(false); // Reset flag on error so we don't show success toast
     }

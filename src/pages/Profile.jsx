@@ -173,8 +173,20 @@ const Profile = () => {
             </div>
             
             <div className="flex-1 min-w-0">
-              <h2 className="font-bold text-gray-800 text-base truncate">{dbUser?.name || '...'}</h2>
-              <p className="text-xs text-blue-600 font-medium mt-0.5">{getPhoneFromEmail()}</p>
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-gray-800 text-base truncate">{dbUser?.name || '...'}</h2>
+                {dbUser?.bloodGroup && dbUser.bloodGroup !== '' && (
+                  <span className="flex-shrink-0 px-2 py-0.5 rounded-lg text-xs font-bold bg-red-100 text-red-600">
+                    🩸 {dbUser.bloodGroup}
+                  </span>
+                )}
+              </div>
+              {(!dbUser?.bloodGroup || dbUser.bloodGroup === '') && (
+                <button onClick={openEdit} className="text-xs text-red-500 hover:text-red-600 underline">
+                  + রক্তের গ্রুপ যোগ করুন
+                </button>
+              )}
+              <p className="text-xs text-blue-600 font-medium mt-0.5">{dbUser?.phone || getPhoneFromEmail()}</p>
               <button onClick={copyId} className="flex items-center gap-1.5 mt-0.5 group">
                 <span className="text-xs text-gray-400 font-mono">{dbUser?.memberId}</span>
                 {copied ? <CheckCircle size={12} className="text-green-500" /> : <Copy size={12} className="text-gray-300 group-hover:text-blue-500 transition-colors" />}

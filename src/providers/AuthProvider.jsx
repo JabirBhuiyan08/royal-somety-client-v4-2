@@ -33,16 +33,50 @@ export const AuthProvider = ({ children }) => {
     console.log('[Auth] Token (first 50 chars):', token.substring(0, 50) + '...');
 
     try {
-      const syncRes = await suppressAuthRedirect(() => api.post(
-        '/auth/sync',
-        { uid: firebaseUser.uid, name: firebaseUser.displayName || 'সদস্য', email: firebaseUser.email, photoURL: firebaseUser.photoURL || null },
+      const syncRes = await suppressAuthRedirect(() => api.post('/auth/sync', 
+        { 
+          uid: firebaseUser.uid, 
+          name: firebaseUser.displayName || 'সদস্য', 
+          email: firebaseUser.email, 
+          photoURL: firebaseUser.photoURL || null,
+          // Extract phone from email format (e.g., +8801749424565@khanbari.somity -> 01749424565)
+          phone: firebaseUser.email?.split('@')[0]?.replace(/^\+88/, '0') || '' 
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       ));
       console.log('[Auth] Sync response:', syncRes.data);
       return syncRes.data.user;
     } catch (err) {
       console.error('[Auth] Sync error:', err.message, err.response?.status, err.response?.data);
-      if (err.response?.status === 401 || err.response?.status === 404) {
+      
+      // Handle specific backend errors with friendly messages
+      const status = err.response?.status;
+      const errorData = err.response?.data;
+      
+      if (status === 500) {
+        // Server error - try register fallback first
+        console.log('[Auth] Server error, attempting register as fallback');
+        try {
+          const registerRes = await suppressAuthRedirect(() => api.post('/auth/register',
+            { uid: firebaseUser.uid, name: firebaseUser.displayName || 'সদস্য', phone: firebaseUser.email?.split('@')[0] || '' },
+            { headers: { Authorization: `Bearer ${token}` } }
+          ));
+          console.log('[Auth] Register fallback response:', registerRes.data);
+          
+          // Check if user was actually created/returned
+          if (!registerRes.data.user) {
+            console.log('[Auth] Register returned null user, showing error');
+            setTimeout(() => toast.error('অ্যাকাউন্ট তৈরি হয়নি, অ্যাডমিনের সাথে যোগাযোগ করুন'), 100);
+            return null;
+          }
+          
+          return registerRes.data.user;
+        } catch (registerErr) {
+          console.error('[Auth] Register fallback also failed:', registerErr.message, registerErr.response?.data);
+          // Show error to user via toast (delayed to avoid React state warning)
+          setTimeout(() => toast.error('সার্ভার সমস্যা হয়েছে, আবার চেষ্টা করুন'), 100);
+        }
+      } else if (status === 401 || status === 404) {
         console.log('[Auth] Sync endpoint failed, attempting register as fallback');
         try {
           const registerRes = await suppressAuthRedirect(() => api.post('/auth/register',
@@ -50,11 +84,27 @@ export const AuthProvider = ({ children }) => {
             { headers: { Authorization: `Bearer ${token}` } }
           ));
           console.log('[Auth] Register fallback response:', registerRes.data);
+          
+          // Check if user was actually created/returned
+          if (!registerRes.data.user) {
+            console.log('[Auth] Register returned null user, showing error');
+            setTimeout(() => toast.error('অ্যাকাউন্ট তৈরি হয়নি, অ্যাডমিনের সাথে যোগাযোগ করুন'), 100);
+            return null;
+          }
+          
           return registerRes.data.user;
         } catch (registerErr) {
           console.error('[Auth] Register fallback also failed:', registerErr.message, registerErr.response?.data);
         }
+      } else if (status === 403) {
+        setTimeout(() => toast.error('অ্যাক্সেস বন্ধ আছে'), 100);
+      } else if (status >= 500) {
+        setTimeout(() => toast.error('সার্ভার সমস্যা হয়েছে'), 100);
+      } else {
+        setTimeout(() => toast.error('কিছু সমস্যা হয়েছে'), 100);
       }
+      
+      // Try validation with stored token as last resort
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         console.log('[Auth] Trying fallback token validation');

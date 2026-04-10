@@ -97,7 +97,14 @@ const Navbar = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-bold text-white text-base">অ্যাডমিন প্যানেল</p>
-              <p className="text-xs text-blue-100 mt-1">{dbUser?.name || 'অ্যাডমিন'}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-blue-100">{dbUser?.name || 'অ্যাডমিন'}</p>
+                {dbUser?.bloodGroup && (
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-red-500/30 text-white">
+                    🩸 {dbUser.bloodGroup}
+                  </span>
+                )}
+              </div>
             </div>
             <button 
               onClick={() => setOpen(false)} 
