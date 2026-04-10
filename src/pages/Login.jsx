@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../utils/firebase';
-import { Eye, EyeOff, Phone, Lock, LogIn, Crown } from 'lucide-react';
+import { Eye, EyeOff, Phone, Lock, LogIn } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../providers/AuthProvider';
+import LoginPageImage from '../../assets/LoginPage.png';
 
 const Login = () => {
   const [phone, setPhone] = useState('');
@@ -79,11 +80,11 @@ const Login = () => {
       <div className="max-w-[480px] mx-auto w-full">
         {/* Logo & Title Section */}
         <div className="text-center mb-10">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-blue-200">
-            <Crown size={32} className="text-white" />
+          <div className="w-60 h-60 rounded-2xl flex items-center justify-center mx-auto mb-5  shadow-blue-200 overflow-hidden">
+            <img src={LoginPageImage} alt="Login" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            খানবাড়ি ভাই ভাই
+            ভাই ভাই
           </h1>
           <p className="text-gray-500 text-sm">
             রয়্যাল সমিতি — লগইন করুন

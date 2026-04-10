@@ -4,6 +4,7 @@ import { Menu, X, LayoutDashboard, CheckSquare, Users, Bell, Settings, LogOut, M
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
 import useNotifications from '../hooks/useNotifications';
+import LogoImage from '../../assets/Logo.png';
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -38,11 +39,14 @@ const Navbar = () => {
           </Link>
 
           {/* Logo/Title */}
-          <div className="text-center">
-            <h1 className="text-sm font-bold text-gray-800 tracking-tight">
-              খানবাড়ি ভাই ভাই
-            </h1>
-            <p className="text-[10px] text-gray-400 mt-0.5">রয়্যাল সমিতি</p>
+          <div className="flex items-center gap-2">
+            <img src={LogoImage} alt="Logo" className="w-8 h-8 object-contain" />
+            <div className="text-center">
+              <h1 className="text-sm font-bold text-gray-800 tracking-tight">
+                ভাই ভাই
+              </h1>
+              <p className="text-[10px] text-gray-400 mt-0.5">রয়্যাল সমিতি <span className="text-[9px]">by Jabnox.com</span></p>
+            </div>
           </div>
 
           {/* Right Side - Menu/Admin Panel Button & Notifications */}

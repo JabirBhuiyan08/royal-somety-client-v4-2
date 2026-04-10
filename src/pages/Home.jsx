@@ -4,6 +4,7 @@ import { useAuth } from '../providers/AuthProvider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useAxios from '../hooks/useAxios';
 import { useNavigate } from 'react-router-dom';
+import { auth } from '../utils/firebase';
 import {
   ChevronRight, Plus, Upload, X, AlertCircle,
   CheckCircle, Clock, Camera, ChevronLeft,
@@ -369,6 +370,12 @@ const Home = () => {
   const [lightbox, setLightbox] = useState(null);
   const [lightboxIdx, setLightboxIdx] = useState(0);
 
+  const getPhoneFromEmail = () => {
+    const email = auth.currentUser?.email;
+    if (!email) return '';
+    return email.split('@')[0].replace(/^\+88/, '0');
+  };
+
   const { data: monthlyData } = useQuery({
     queryKey: ['monthly-status'],
     queryFn: () => axios.get('/member/monthly-status').then(r => r.data),
@@ -447,6 +454,7 @@ const Home = () => {
                 <h2 className="font-bold text-gray-800 text-base truncate">
                   {dbUser?.name || '...'}
                 </h2>
+                <p className="text-xs text-blue-600 font-medium">{getPhoneFromEmail()}</p>
                 <p className="text-xs text-gray-500 font-mono">ID: {dbUser?.memberId || '—'}</p>
                 <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                   {dbUser?.role === 'admin' && (
@@ -498,13 +506,6 @@ const Home = () => {
         <QuickStats monthlyData={monthlyData} />
         <DueAlert monthlyData={monthlyData} onRequestPay={openPay} />
         <MonthlyGrid monthlyData={monthlyData} onRequestPay={openPay} />
-        <GalleryStrip
-          photos={photos}
-          uploading={uploading}
-          fileRef={fileRef}
-          onFileChange={handleFileChange}
-          onOpen={openLightbox}
-        />
       </div>
 
       {/* Deposit Modal */}

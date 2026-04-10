@@ -25,5 +25,5 @@ export const TARGET_CATEGORIES = [
   'অন্যান্য',
 ];
 
-export const SOMITY_NAME = 'খানবাড়ি ভাই ভাই রয়্যাল সমিতি';
-export const SOMITY_NAME_SHORT = 'KBBRS';
+export const SOMITY_NAME = 'ভাই ভাই রয়্যাল সমিতি';
+export const SOMITY_NAME_SHORT = 'BBRS';
