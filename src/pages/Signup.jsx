@@ -8,7 +8,7 @@ import { Eye, EyeOff, User, Droplet, Lock, LogIn, Shield } from 'lucide-react';
 import { BLOOD_GROUPS } from '../utils/constants';
 import toast from 'react-hot-toast';
 import { useAuth } from '../providers/AuthProvider';
-import Logo from '../../assets/logo.png';
+import Logo from '..//assets/logo.png';
 
 const Signup = () => {
   const [form, setForm] = useState({ name: '', bbrcNumber: '', bloodGroup: '' });
