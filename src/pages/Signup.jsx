@@ -8,7 +8,7 @@ import { Eye, EyeOff, User, Droplet, Lock, LogIn, Shield } from 'lucide-react';
 import { BLOOD_GROUPS } from '../utils/constants';
 import toast from 'react-hot-toast';
 import { useAuth } from '../providers/AuthProvider';
-import Logo from '..//assets/logo.png';
+// import Logo from '..//assets/logo.png';
 
 const Signup = () => {
   const [form, setForm] = useState({ name: '', bbrcNumber: '', bloodGroup: '' });
@@ -129,7 +129,7 @@ const Signup = () => {
       <div className="max-w-[480px] mx-auto w-full">
         {/* Logo & Title Section */}
         <div className="text-center mb-8">
-          <img src={Logo} alt="Logo" className="w-16 h-16 mx-auto mb-4" />
+          <img src={} alt="Logo" className="w-16 h-16 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
             নতুন সদস্য নিবন্ধন
           </h1>
