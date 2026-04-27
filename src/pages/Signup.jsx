@@ -4,17 +4,20 @@ import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../utils/firebase';
 import api, { suppressAuthRedirect } from '../utils/api';
-import { Eye, EyeOff, User, Phone, Droplet, Lock, LogIn, Crown, Shield } from 'lucide-react';
+import { Eye, EyeOff, User, Droplet, Lock, LogIn, Shield } from 'lucide-react';
 import { BLOOD_GROUPS } from '../utils/constants';
 import toast from 'react-hot-toast';
 import { useAuth } from '../providers/AuthProvider';
+import LogoImage from '../../assets/logo.png';
 
 const Signup = () => {
-  const [form, setForm] = useState({ name: '', phone: '', bloodGroup: '' });
+  const [form, setForm] = useState({ name: '', bbrcNumber: '', bloodGroup: '' });
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [availableNumbers, setAvailableNumbers] = useState([]);
+  const [loadingNumbers, setLoadingNumbers] = useState(false);
   const navigate = useNavigate();
   const { user, dbUser, loading: authLoading } = useAuth();
   const registeredRef = useRef(false);
@@ -26,17 +29,57 @@ const Signup = () => {
     }
   }, [user, dbUser, authLoading, navigate]);
 
-  // Format phone as email (Firebase requires email format for authentication)
-  const formatPhoneAsEmail = (value) => {
-    const digits = value.replace(/\D/g, '');
-    const phoneWithPrefix = digits.startsWith('0') ? '+88' + digits : digits;
-    return phoneWithPrefix + '@khanbari.somity';
+  // Load available BBRC numbers once on mount
+  useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
+    
+    const fetchAvailableNumbers = async () => {
+      try {
+        setLoadingNumbers(true);
+        const token = localStorage.getItem('token');
+        const res = await api.get('/auth/available-bbrc-numbers', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          signal: controller.signal
+        });
+        if (mounted) {
+          if (res.data && res.data.numbers) {
+            setAvailableNumbers(res.data.numbers);
+          } else {
+            throw new Error('Invalid response format');
+          }
+        }
+      } catch (err) {
+        if (mounted && err.name !== 'AbortError') {
+          console.error('Failed to load available numbers:', err);
+          // Generate default numbers 1-500 if API fails
+          const nums = Array.from({ length: 500 }, (_, i) => 
+            String(i + 1).padStart(4, '0')
+          );
+          setAvailableNumbers(nums);
+        }
+      }
+      if (mounted) {
+        setLoadingNumbers(false);
+      }
+    };
+    fetchAvailableNumbers();
+    
+    return () => { 
+      mounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  // Format BBRC ID as email (Firebase requires email format for authentication)
+  const formatBbrcAsEmail = (bbrcNumber) => {
+    return `BBRC${String(bbrcNumber).padStart(4, '0')}@khanbari.somity`;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.phone || form.phone.length < 11) {
-      toast.error('সঠিক ফোন নম্বর দিন');
+    if (!form.bbrcNumber) {
+      toast.error('BBRC নম্বর নির্বাচন করুন');
       return;
     }
     if (pin !== confirmPin) {
@@ -50,8 +93,8 @@ const Signup = () => {
     setLoading(true);
     registeredRef.current = false;
     try {
-      const emailAsPhone = formatPhoneAsEmail(form.phone);
-      const cred = await createUserWithEmailAndPassword(auth, emailAsPhone, pin);
+      const email = formatBbrcAsEmail(form.bbrcNumber);
+      const cred = await createUserWithEmailAndPassword(auth, email, pin);
       await updateProfile(cred.user, { displayName: form.name });
       
       const token = await cred.user.getIdToken();
@@ -60,7 +103,7 @@ const Signup = () => {
       await suppressAuthRedirect(() => api.post('/auth/register', { 
         uid: cred.user.uid, 
         name: form.name, 
-        phone: form.phone, 
+        phone: `BBRC${String(form.bbrcNumber).padStart(4, '0')}`,
         bloodGroup: form.bloodGroup 
       },
         { headers: { Authorization: `Bearer ${token}` } }));
@@ -71,7 +114,7 @@ const Signup = () => {
     } catch (err) {
       console.error(err);
       if (err.code === 'auth/email-already-in-use') {
-        toast.error('এই ফোন নম্বরে আগে অ্যাকাউন্ট তৈরি হয়েছে। লগইন করুন।');
+        toast.error('এই BBRC ID দিয়ে আগে অ্যাকাউন্ট তৈরি হয়েছে। লগইন করুন।');
         navigate('/login');
       } else {
         toast.error('নিবন্ধন ব্যর্থ হয়েছে');
@@ -86,9 +129,7 @@ const Signup = () => {
       <div className="max-w-[480px] mx-auto w-full">
         {/* Logo & Title Section */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-blue-200">
-            <Crown size={32} className="text-white" />
-          </div>
+          <img src={LogoImage} alt="Logo" className="w-16 h-16 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
             নতুন সদস্য নিবন্ধন
           </h1>
@@ -115,26 +156,30 @@ const Signup = () => {
             />
           </div>
 
-          {/* Phone Number */}
-          <div>
-            <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <Phone size={16} className="text-blue-500" />
-              ফোন নম্বর
-            </label>
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                <span className="text-sm font-medium">+88</span>
-              </div>
-              <input 
-                type="tel" 
-                value={form.phone} 
-                onChange={e => setForm({ ...form, phone: e.target.value })} 
-                placeholder="01XXXXXXXXX" 
-                required 
-                className="w-full pl-14 pr-4 py-3.5 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white"
-              />
-            </div>
-          </div>
+           {/* BBRC ID Selection */}
+           <div>
+             <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+               <Shield size={16} className="text-blue-500" />
+               BBRC নম্বর
+             </label>
+             {loadingNumbers ? (
+               <div className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-gray-500 text-sm">
+                 লোড হচ্ছে...
+               </div>
+             ) : (
+               <select 
+                 value={form.bbrcNumber} 
+                 onChange={e => setForm({ ...form, bbrcNumber: e.target.value })} 
+                 required 
+                 className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white appearance-none cursor-pointer"
+               >
+                 <option value="">BBRC নম্বর নির্বাচন করুন</option>
+                 {availableNumbers.map(num => (
+                   <option key={num} value={num}>BBRC{num}</option>
+                 ))}
+               </select>
+             )}
+           </div>
 
           {/* Blood Group */}
           <div>
@@ -188,11 +233,11 @@ const Signup = () => {
             <input
               type={showPin ? 'text' : 'password'}
               value={confirmPin}
-onChange={e => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="XXXXXX"
-                required
-                className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-center tracking-[0.25em] text-lg font-semibold"
-                maxLength={6}
+              onChange={e => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="XXXXXX"
+              required
+              className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-center tracking-[0.25em] text-lg font-semibold"
+              maxLength={6}
             />
           </div>
 

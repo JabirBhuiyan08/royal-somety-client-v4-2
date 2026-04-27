@@ -9,11 +9,9 @@ import LoadingScreen from './components/LoadingScreen';
 
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import Home from './pages/Home';
-import Profile from './pages/Profile';
 import Wallet from './pages/Wallet';
 import Emergency from './pages/Emergency';
-import Gallery from './pages/Gallery';
+import Profile from './pages/Profile';
 import Chat from './pages/Chat';
 import Notifications from './pages/Notifications';
 import NotFound from './pages/NotFound';
@@ -23,6 +21,7 @@ import AdminPayments from './pages/AdminPayments';
 import AdminMembers from './pages/AdminMembers';
 import AdminNotifications from './pages/AdminNotifications';
 import AdminSettings from './pages/AdminSettings';
+import AdminTransactions from './pages/AdminTransactions';
 
 const ProtectedRoute = ({ children }) => {
   const { user, dbUser, loading } = useAuth();
@@ -65,18 +64,17 @@ const AppRoutes = () => {
 
       {/* Member layout */}
       <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-        <Route index element={<Home />} />
-        <Route path="gallery"       element={<Gallery />} />
-        <Route path="wallet"        element={<Wallet />} />
-        <Route path="emergency"     element={<Emergency />} />
-        <Route path="profile"       element={<Profile />} />
-        <Route path="chat"          element={<Chat />} />
+        <Route index element={<Wallet />} />
+        <Route path="emergency" element={<Emergency />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="chat" element={<Chat />} />
         <Route path="notifications" element={<Notifications />} />
       </Route>
 
       {/* Admin layout */}
       <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
         <Route path="dashboard"     element={<AdminDashboard />} />
+        <Route path="transactions" element={<AdminTransactions />} />
         <Route path="payments"      element={<AdminPayments />} />
         <Route path="members"       element={<AdminMembers />} />
         <Route path="notifications" element={<AdminNotifications />} />

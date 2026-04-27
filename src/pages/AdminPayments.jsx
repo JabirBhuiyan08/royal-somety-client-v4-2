@@ -11,16 +11,40 @@ const BN_MONTHS = ['জানুয়ারি','ফেব্রুয়ার
 const AdminUploadModal = ({ members, onClose, axios, qc }) => {
   const [form, setForm] = useState({ memberId: '', amount: '', paymentMonth: '', note: '', target: '' });
   const [selectedAmountIndex, setSelectedAmountIndex] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const now = new Date();
-  const monthOptions = Array.from({ length: 12 }, (_, i) => {
-    const m = String(i + 1).padStart(2, '0');
-    return { value: `${now.getFullYear()}-${m}`, label: BN_MONTHS[i] };
-  });
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth(); // 0-indexed
+  const yearOptions = Array.from({ length: 11 }, (_, i) => currentYear - i); // Current year + past 10 years
+
+  // Generate month options based on selected year
+  const getMonthOptions = (selectedYear) => {
+    const year = selectedYear ? parseInt(selectedYear) : currentYear;
+    return Array.from({ length: 12 }, (_, i) => {
+      const m = String(i + 1).padStart(2, '0');
+      const monthDate = new Date(year, i, 1);
+      const isFuture = monthDate > now;
+      return { 
+        value: `${year}-${m}`, 
+        label: BN_MONTHS[i],
+        disabled: isFuture 
+      };
+    });
+  };
+
+  const selectedYear = form.paymentMonth ? form.paymentMonth.split('-')[0] : '';
+  const monthOptions = getMonthOptions(selectedYear);
 
   const { data: targets = [] } = useQuery({
     queryKey: ['admin-targets'],
     queryFn: () => axios.get('/member/targets').then(r => r.data.targets),
   });
+
+  // Filter members based on search query
+  const filteredMembers = members.filter(member =>
+    member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    member.memberId.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const mutation = useMutation({
     mutationFn: () => axios.post('/admin/transactions/admin-upload', form),
@@ -47,19 +71,59 @@ const AdminUploadModal = ({ members, onClose, axios, qc }) => {
         </div>
 
         <div className="p-5 space-y-4">
-          {/* Member Selection */}
+          {/* Member Selection with Search */}
           <div>
             <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
               <User size={16} className="text-blue-500" />
-              সদস্য নির্বাচন
+              সদস্য খুঁজুন
             </label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="নাম বা আইডি দিয়ে খুঁজুন"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 outline-none mb-2"
+            />
             <select 
               value={form.memberId} 
               onChange={e => setForm({...form, memberId: e.target.value})} 
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 outline-none"
             >
               <option value="">সদস্য বেছে নিন</option>
-              {members.map(m => <option key={m._id} value={m._id}>{m.name} — {m.memberId}</option>)}
+              {filteredMembers.map(m => (
+                <option key={m._id} value={m._id}>
+                  {m.name} — {m.memberId} {m.phone ? `(${m.phone})` : ''}
+                </option>
+              ))}
+            </select>
+            {filteredMembers.length === 0 && searchQuery && (
+              <p className="text-xs text-gray-400 mt-1">কোনো সদস্য পাওয়া যায়নি</p>
+            )}
+          </div>
+
+          {/* Year Selection */}
+          <div>
+            <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <Calendar size={16} className="text-blue-500" />
+              সাল
+            </label>
+            <select 
+              value={selectedYear}
+              onChange={e => {
+                const year = e.target.value;
+                if (year) {
+                  // Reset month to January when year changes
+                  setForm({...form, paymentMonth: `${year}-01`});
+                } else {
+                  setForm({...form, paymentMonth: ''});
+                }
+              }}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 outline-none"
+            >
+              <option value="">সাল নির্বাচন করুন</option>
+              {yearOptions.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
             </select>
           </div>
 
@@ -70,12 +134,22 @@ const AdminUploadModal = ({ members, onClose, axios, qc }) => {
               মাস
             </label>
             <select 
-              value={form.paymentMonth} 
-              onChange={e => setForm({...form, paymentMonth: e.target.value})} 
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 outline-none"
+              value={form.paymentMonth ? form.paymentMonth.split('-')[1] : ''}
+              onChange={e => {
+                const month = e.target.value;
+                if (month && selectedYear) {
+                  setForm({...form, paymentMonth: `${selectedYear}-${month}`});
+                }
+              }}
+              disabled={!selectedYear}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">মাস নির্বাচন করুন</option>
-              {monthOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              {monthOptions.map(o => (
+                <option key={o.value} value={o.value.split('-')[1]} disabled={o.disabled}>
+                  {o.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -151,7 +225,7 @@ const AdminUploadModal = ({ members, onClose, axios, qc }) => {
 
           <button 
             onClick={() => mutation.mutate()} 
-            disabled={!form.memberId || !form.amount || mutation.isPending} 
+            disabled={!form.memberId || !form.amount || !form.paymentMonth || mutation.isPending} 
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
           >
             {mutation.isPending ? 'যোগ হচ্ছে...' : 'পেমেন্ট যোগ করুন'}

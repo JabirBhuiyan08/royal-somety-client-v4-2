@@ -1,13 +1,11 @@
 // client/src/components/BottomNav.jsx (Completely inline, no CSS files needed)
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Images, Wallet, Phone, User } from 'lucide-react';
+import { Home, Phone, User } from 'lucide-react';
 
 const navItems = [
-  { to: '/',          icon: Home,   label: 'হোম'      },
-  { to: '/gallery',   icon: Images, label: 'গ্যালারি' },
-  { to: '/wallet',    icon: Wallet, label: 'ওয়ালেট'  },
-  { to: '/emergency', icon: Phone,  label: 'জরুরি'    },
-  { to: '/profile',   icon: User,   label: 'প্রোফাইল' },
+  { to: '/',         icon: Home,   label: 'হোম'    },
+  { to: '/emergency', icon: Phone, label: 'জরুরি'  },
+  { to: '/profile',  icon: User,  label: 'প্রোফাইল'},
 ];
 
 const BottomNav = () => {

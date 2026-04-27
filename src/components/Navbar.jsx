@@ -1,6 +1,6 @@
 // client/src/components/Navbar.jsx
 import { useState } from 'react';
-import { Menu, X, LayoutDashboard, CheckSquare, Users, Bell, Settings, LogOut, MessageCircle, Home } from 'lucide-react';
+import { Menu, X, LayoutDashboard, CheckSquare, Users, Bell, Settings, LogOut, MessageCircle, Home, CreditCard } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
 import useNotifications from '../hooks/useNotifications';
@@ -14,6 +14,7 @@ const Navbar = () => {
 
   const adminItems = [
     { icon: LayoutDashboard, label: 'ড্যাশবোর্ড', to: '/admin/dashboard', color: 'blue' },
+    { icon: CreditCard, label: 'সকল লেনদেন', to: '/admin/transactions', color: 'indigo' },
     { icon: CheckSquare, label: 'পেমেন্ট অনুমোদন', to: '/admin/payments', color: 'green' },
     { icon: Users, label: 'সদস্য ব্যবস্থাপনা', to: '/admin/members', color: 'purple' },
     { icon: Bell, label: 'নোটিফিকেশন', to: '/admin/notifications', color: 'orange' },
@@ -149,6 +150,7 @@ const Navbar = () => {
               purple: 'bg-purple-50 text-purple-600 group-hover:bg-purple-100',
               orange: 'bg-orange-50 text-orange-600 group-hover:bg-orange-100',
               gray: 'bg-gray-100 text-gray-600 group-hover:bg-gray-200',
+              indigo: 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100',
             };
             
             return (

@@ -20,14 +20,30 @@ const ChatWindow = () => {
   const { onlineCount } = usePresence();
 
   useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      setMessages([]);
+      return;
+    }
+
     const q = query(collection(db, CHAT_COLLECTION), orderBy('createdAt', 'asc'), limit(100));
-    const unsub = onSnapshot(q, (snap) => {
-      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setLoading(false); setOnline(true);
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    }, (err) => { console.error(err); setOnline(false); setLoading(false); toast.error('চ্যাট সংযোগ বিচ্ছিন্ন'); });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        setLoading(false);
+        setOnline(true);
+        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      },
+      (err) => {
+        console.error(err);
+        setOnline(false);
+        setLoading(false);
+        toast.error('চ্যাট সংযোগ বিচ্ছিন্ন');
+      }
+    );
     return () => unsub();
-  }, []);
+  }, [user]);
 
   const sendMessage = async (text) => {
     if (!user) { toast.error('মেসেজ পাঠাতে লগইন করুন'); return; }

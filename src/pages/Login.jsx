@@ -3,19 +3,21 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../utils/firebase';
-import { Eye, EyeOff, Phone, Lock, LogIn } from 'lucide-react';
+import { Eye, EyeOff, Phone, Lock, LogIn, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../providers/AuthProvider';
 import LoginPageImage from '../../assets/LoginPage.png';
 
+
 const Login = () => {
-  const [phone, setPhone] = useState('');
+  const [bbrcNumber, setBbrcNumber] = useState('');
   const [pin, setPin] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
   const navigate = useNavigate();
   const { user, dbUser, loading: authLoading } = useAuth();
+
 
   // Redirect if already logged in (after auth is fully loaded)
   // Also handle redirect after successful login once dbUser is synced
@@ -44,17 +46,15 @@ const Login = () => {
     }
   }, [user, dbUser, authLoading, navigate, justLoggedIn]);
 
-  // Format phone as email (Firebase requires email format for authentication)
-  const formatPhoneAsEmail = (value) => {
-    const digits = value.replace(/\D/g, '');
-    const phoneWithPrefix = digits.startsWith('0') ? '+88' + digits : digits;
-    return phoneWithPrefix + '@khanbari.somity';
+  // Format BBRC ID as email (Firebase requires email format for authentication)
+  const formatBbrcAsEmail = (bbrcNum) => {
+    return `BBRC${String(bbrcNum).padStart(4, '0')}@khanbari.somity`;
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!phone || !pin) {
-      toast.error('ফোন নম্বর এবং পিন দিন');
+    if (!bbrcNumber || !pin) {
+      toast.error('BBRC নম্বর এবং পিন দিন');
       return;
     }
     if (pin.length !== 6) {
@@ -63,11 +63,11 @@ const Login = () => {
     }
     setLoading(true);
     setJustLoggedIn(true);
-    console.log('[Login] Attempting login with phone:', phone);
+    console.log('[Login] Attempting login with BBRC:', bbrcNumber);
     try {
-      const emailAsPhone = formatPhoneAsEmail(phone);
+      const email = formatBbrcAsEmail(bbrcNumber);
       console.log('[Login] Calling Firebase signInWithEmailAndPassword');
-      await signInWithEmailAndPassword(auth, emailAsPhone, pin);
+      await signInWithEmailAndPassword(auth, email, pin);
       console.log('[Login] Firebase login successful');
       
       // Add timeout fallback - if backend sync doesn't complete in 10s, show error
@@ -135,23 +135,21 @@ const Login = () => {
 
         {/* Login Form */}
         <form onSubmit={handleLogin} className="space-y-5">
-          {/* Phone Number Field */}
+          {/* BBRC ID Field */}
           <div>
             <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <Phone size={16} className="text-blue-500" />
-              ফোন নম্বর
+              <Shield size={16} className="text-blue-500" />
+              BBRC নম্বর
             </label>
             <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                <span className="text-sm font-medium">+88</span>
-              </div>
               <input
-                type="tel"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                placeholder="01XXXXXXXXX"
+                type="text"
+                value={bbrcNumber}
+                onChange={e => setBbrcNumber(e.target.value)}
+                placeholder="১২৩৪"
                 required
-                className="w-full pl-14 pr-4 py-3.5 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white"
+                className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-center text-lg"
+                maxLength={4}
               />
             </div>
           </div>

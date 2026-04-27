@@ -66,11 +66,12 @@ const Profile = () => {
     onError: () => toast.error('আপডেট ব্যর্থ'),
   });
 
-  const copyId = () => { 
-    navigator.clipboard.writeText(dbUser?.memberId || ''); 
-    setCopied(true); 
-    setTimeout(() => setCopied(false), 2000); 
-    toast.success('আইডি কপি হয়েছে'); 
+  const copyId = () => {
+    const bbrcId = `BBRC${dbUser?.memberId?.replace('KBBRS-', '') || ''}`;
+    navigator.clipboard.writeText(bbrcId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast.success('আইডি কপি হয়েছে');
   };
 
   const formatPhoneAsEmail = (value) => {
@@ -80,16 +81,16 @@ const Profile = () => {
     return phoneWithPrefix + '@khanbari.somity';
   };
 
-  const getPhoneFromEmail = () => {
+  const getPhoneOrBbrcFromEmail = () => {
     const email = auth.currentUser?.email;
     if (!email) return '';
-    return email.split('@')[0].replace(/^\+88/, '0');
+    return email.split('@')[0];
   };
 
   const handleChangePin = async () => {
-    const phone = pinForm.phone || getPhoneFromEmail();
-    if (!phone) {
-      toast.error('ফোন নম্বর দিন');
+    const bbrc = pinForm.phone || getPhoneOrBbrcFromEmail();
+    if (!bbrc) {
+      toast.error('BBRC নম্বর দিন');
       return;
     }
     if (!pinForm.previousPin || !pinForm.newPin || !pinForm.confirmPin) {
@@ -107,8 +108,8 @@ const Profile = () => {
     
     setChangingPin(true);
     try {
-      const emailAsPhone = formatPhoneAsEmail(phone);
-      await signInWithEmailAndPassword(auth, emailAsPhone, pinForm.previousPin);
+      const email = bbrc.includes('@') ? bbrc : `BBRC${String(bbrc).padStart(4, '0')}@khanbari.somity`;
+      await signInWithEmailAndPassword(auth, email, pinForm.previousPin);
       await updatePassword(auth.currentUser, pinForm.newPin);
       await axios.post('/member/change-pin', { newPin: pinForm.newPin });
       toast.success('পিন পরিবর্তন হয়েছে');
@@ -186,11 +187,12 @@ const Profile = () => {
                   + রক্তের গ্রুপ যোগ করুন
                 </button>
               )}
-              <p className="text-xs text-blue-600 font-medium mt-0.5">{dbUser?.phone || getPhoneFromEmail()}</p>
+              <p className="text-xs text-blue-600 font-medium mt-0.5">{dbUser?.phone || getPhoneOrBbrcFromEmail()}</p>
               <button onClick={copyId} className="flex items-center gap-1.5 mt-0.5 group">
-                <span className="text-xs text-gray-400 font-mono">{dbUser?.memberId}</span>
-                {copied ? <CheckCircle size={12} className="text-green-500" /> : <Copy size={12} className="text-gray-300 group-hover:text-blue-500 transition-colors" />}
+                <span className="text-xs text-gray-400 font-mono">BBRC{dbUser?.memberId?.replace('KBBRS-', '')}</span>
+                <Copy size={12} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
               </button>
+
               {isAdmin && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 mt-1">
                   👑 অ্যাডমিন
