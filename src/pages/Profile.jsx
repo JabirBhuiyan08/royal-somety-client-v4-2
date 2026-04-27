@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react';
 import { useAuth } from '../providers/AuthProvider';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Camera, Copy, CheckCircle, Phone, Droplets, Calendar, Edit2, LogOut, Save, X, Wallet, Users, TrendingUp, Lock, Eye, EyeOff } from 'lucide-react';
+import { Camera, Copy, CheckCircle, Phone, Droplets, Edit2, LogOut, Save, X, Wallet, Users, TrendingUp, Lock, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useAxios from '../hooks/useAxios';
 import toast from 'react-hot-toast';
@@ -39,29 +39,33 @@ const Profile = () => {
     enabled: isAdmin,
   });
 
-  const openEdit = () => { 
-    setForm({ name: dbUser?.name || '', phone: dbUser?.phone || '', bloodGroup: dbUser?.bloodGroup || '' }); 
-    setEditMode(true); 
+  const openEdit = () => {
+    setForm({
+      name: dbUser?.name || '',
+      phone: dbUser?.phone || '',
+      bloodGroup: 'this should open under its edit button'
+    });
+    setEditMode(true);
   };
 
   const updateMutation = useMutation({
     mutationFn: () => {
       const fd = new FormData();
       if (form.name) fd.append('name', form.name);
-      if (form.phone) fd.append('phone', form.phone);
-      if (form.bloodGroup) fd.append('bloodGroup', form.bloodGroup);
+      if (form.phone !== undefined) fd.append('phone', form.phone);
+      if (form.bloodGroup !== undefined) fd.append('bloodGroup', form.bloodGroup);
       if (avatarFile) fd.append('avatar', avatarFile);
       if (coverFile) fd.append('cover', coverFile);
       return axios.patch('/member/profile', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
     },
-    onSuccess: (res) => { 
-      setDbUser(res.data.user); 
-      toast.success('প্রোফাইল আপডেট হয়েছে'); 
-      setEditMode(false); 
-      setAvatarFile(null); 
-      setCoverFile(null); 
-      setAvatarPreview(null); 
-      setCoverPreview(null); 
+    onSuccess: (res) => {
+      setDbUser(res.data.user);
+      toast.success('প্রোফাইল আপডেট হয়েছে');
+      setEditMode(false);
+      setAvatarFile(null);
+      setCoverFile(null);
+      setAvatarPreview(null);
+      setCoverPreview(null);
     },
     onError: () => toast.error('আপডেট ব্যর্থ'),
   });
@@ -105,7 +109,7 @@ const Profile = () => {
       toast.error('নতুন পিন এবং কনফার্ম পিন মিলেনি');
       return;
     }
-    
+
     setChangingPin(true);
     try {
       const email = bbrc.includes('@') ? bbrc : `BBRC${String(bbrc).padStart(4, '0')}@khanbari.somity`;
@@ -134,6 +138,7 @@ const Profile = () => {
 
   return (
     <div className="pb-24">
+      {/* Cover & Avatar */}
       <div className="relative h-32 bg-gradient-to-r from-blue-600 to-blue-700 overflow-hidden">
         {(coverPreview || dbUser?.coverPhoto) && (
           <img src={coverPreview || dbUser.coverPhoto} alt="" className="w-full h-full object-cover" />
@@ -151,7 +156,7 @@ const Profile = () => {
 
       <div className="px-4">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 mt-8 mb-4">
-          <div className="flex items-end gap-3 mb-3">
+          <div className="flex items-end gap-3 mb-4">
             <div className="relative">
               <div className="w-16 h-16 rounded-xl overflow-hidden ring-4 ring-white shadow-md bg-gradient-to-br from-blue-100 to-indigo-100">
                 {(avatarPreview || dbUser?.avatar) ? (
@@ -172,7 +177,7 @@ const Profile = () => {
                 setAvatarPreview(URL.createObjectURL(f));
               }} />
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h2 className="font-bold text-gray-800 text-base truncate">{dbUser?.name || '...'}</h2>
@@ -199,7 +204,7 @@ const Profile = () => {
                 </span>
               )}
             </div>
-            
+
             <button onClick={editMode ? () => setEditMode(false) : openEdit} className="w-8 h-8 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 flex items-center justify-center transition-all active:scale-95">
               {editMode ? <X size={14} className="text-gray-400" /> : <Edit2 size={14} className="text-gray-500" />}
             </button>
@@ -217,33 +222,87 @@ const Profile = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="bg-white rounded-xl p-3 text-center shadow-sm border border-gray-100">
-            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 mb-2">
-              <Wallet size={14} className="text-green-600" />
+        {/* 4 Info Cards Grid */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          {/* Name Card */}
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                <span className="text-xs">👤</span>
+              </div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">নাম</p>
             </div>
-            <p className="text-base font-bold text-green-600">৳{totalBalance.toLocaleString()}</p>
-            <p className="text-xs text-gray-500 mt-0.5">সকলের ব্যালেন্স</p>
-            {myBalance > 0 && <p className="text-xs font-semibold text-blue-600 mt-1">আপনার: ৳{myBalance.toLocaleString()}</p>}
+            <p className="text-sm font-semibold text-gray-800">{dbUser?.name || 'N/A'}</p>
           </div>
-          
-          <div className="bg-white rounded-xl p-3 text-center shadow-sm border border-gray-100">
-            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 mb-2">
-              <TrendingUp size={14} className="text-blue-600" />
+
+          {/* ID Card */}
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center">
+                <span className="text-xs">🆔</span>
+              </div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">আইডি</p>
             </div>
-            <p className="text-base font-bold text-blue-600">৳{(dbUser?.monthlyDeposit || 0).toLocaleString()}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-semibold text-gray-800 truncate">BBRC{dbUser?.memberId?.replace('KBBRS-', '')}</p>
+              <button onClick={copyId} className="p-1 hover:bg-gray-100 rounded transition-colors">
+                <Copy size={12} className="text-gray-400" />
+              </button>
+            </div>
+          </div>
+
+          {/* Phone Card */}
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                <Phone size={12} className="text-green-600" />
+              </div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">ফোন</p>
+            </div>
+            <p className="text-sm font-semibold text-gray-800">{dbUser?.phone || getPhoneOrBbrcFromEmail()}</p>
+          </div>
+
+          {/* Blood Group Card */}
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
+                <Droplets size={12} className="text-red-600" />
+              </div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">রক্তের গ্রুপ</p>
+            </div>
+            <p className="text-sm font-semibold text-gray-800">{dbUser?.bloodGroup || 'N/A'}</p>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="bg-white rounded-xl p-2.5 text-center shadow-sm border border-gray-100">
+            <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-green-100 mb-1">
+              <Wallet size={13} className="text-green-600" />
+            </div>
+            <p className="text-sm font-bold text-green-600">৳{totalBalance.toLocaleString()}</p>
+            <p className="text-xs text-gray-500 mt-0.5">সকলের ব্যালেন্স</p>
+            {myBalance > 0 && <p className="text-[10px] font-semibold text-blue-600 mt-0.5">আপনার: ৳{myBalance.toLocaleString()}</p>}
+          </div>
+
+          <div className="bg-white rounded-xl p-2.5 text-center shadow-sm border border-gray-100">
+            <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 mb-1">
+              <TrendingUp size={13} className="text-blue-600" />
+            </div>
+            <p className="text-sm font-bold text-blue-600">৳{(dbUser?.monthlyDeposit || 0).toLocaleString()}</p>
             <p className="text-xs text-gray-500 mt-0.5">এই মাসে</p>
           </div>
-          
-          <div className="bg-white rounded-xl p-3 text-center shadow-sm border border-gray-100">
-            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 mb-2">
-              <Users size={14} className="text-gray-600" />
+
+          <div className="bg-white rounded-xl p-2.5 text-center shadow-sm border border-gray-100">
+            <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 mb-1">
+              <Users size={13} className="text-gray-600" />
             </div>
-            <p className="text-base font-bold text-gray-700">{dbUser?.transactionCount || 0}</p>
+            <p className="text-sm font-bold text-gray-700">{dbUser?.transactionCount || 0}</p>
             <p className="text-xs text-gray-500 mt-0.5">লেনদেন</p>
           </div>
         </div>
 
+        {/* Admin Stats */}
         {isAdmin && stats && !statsLoading && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 mb-4 border border-blue-100">
             <div className="flex items-center gap-2 mb-3">
@@ -265,6 +324,7 @@ const Profile = () => {
           </div>
         )}
 
+        {/* Edit Mode Form */}
         {editMode && (
           <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
             <p className="text-sm font-bold text-gray-700 mb-3">প্রোফাইল সম্পাদনা</p>
@@ -274,7 +334,7 @@ const Profile = () => {
                 <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all" placeholder="আপনার নাম" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1 block">ফোন</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">ফোন নম্বর</label>
                 <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all" placeholder="০১XXXXXXXXX" />
               </div>
               <div>
@@ -293,39 +353,8 @@ const Profile = () => {
             </div>
           </div>
         )}
-        
 
-        {!editMode && dbUser?.bloodGroup && (
-          <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
-                <Users size={12} className="text-gray-600" />
-              </div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">ব্যক্তিগত তথ্য</p>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
-                  <Droplets size={14} className="text-red-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">রক্তের গ্রুপ</p>
-                  <p className="text-sm font-semibold text-gray-700">{dbUser?.bloodGroup || 'N/A'}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                  <Calendar size={14} className="text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">যোগদানের তারিখ</p>
-                  <p className="text-sm font-semibold text-gray-700">{dbUser?.createdAt ? new Date(dbUser.createdAt).toLocaleDateString('bn-BD') : 'N/A'}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
+        {/* Change PIN Section */}
         {changePinMode ? (
           <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-3">
@@ -372,16 +401,16 @@ const Profile = () => {
             </div>
           </div>
         ) : (
-          <button onClick={() => { 
-          setPinForm({ ...pinForm, phone: dbUser?.phone || '', previousPin: '', newPin: '', confirmPin: '' }); 
-          setChangePinMode(true); 
-        }} className="w-full py-3 rounded-xl flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-100 active:scale-95 transition-all mb-4">
+          <button onClick={() => {
+            setPinForm({ ...pinForm, phone: dbUser?.phone || '', previousPin: '', newPin: '', confirmPin: '' });
+            setChangePinMode(true);
+          }} className="w-full py-3 rounded-xl flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-100 active:scale-95 transition-all mb-4">
             <Lock size={16} />
             <span>পিন পরিবর্তন করুন</span>
           </button>
         )}
 
-<button onClick={async () => { await logout(); navigate('/login'); }} className="w-full py-3 rounded-xl flex items-center justify-center gap-2 bg-red-50 border border-red-200 text-red-600 font-semibold text-sm hover:bg-red-100 active:scale-95 transition-all">
+        <button onClick={async () => { await logout(); navigate('/login'); }} className="w-full py-3 rounded-xl flex items-center justify-center gap-2 bg-red-50 border border-red-200 text-red-600 font-semibold text-sm hover:bg-red-100 active:scale-95 transition-all">
           <LogOut size={16} />
           <span>লগআউট</span>
         </button>
