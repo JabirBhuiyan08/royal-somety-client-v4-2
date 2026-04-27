@@ -129,7 +129,7 @@ const Signup = () => {
       <div className="max-w-[480px] mx-auto w-full">
         {/* Logo & Title Section */}
         <div className="text-center mb-8">
-          <img src={} alt="Logo" className="w-16 h-16 mx-auto mb-4" />
+          {/* <img src={} alt="Logo" className="w-16 h-16 mx-auto mb-4" /> */}
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
             নতুন সদস্য নিবন্ধন
           </h1>
