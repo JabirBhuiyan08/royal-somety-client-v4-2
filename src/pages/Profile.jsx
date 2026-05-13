@@ -70,13 +70,12 @@ const Profile = () => {
     onError: () => toast.error('আপডেট ব্যর্থ'),
   });
 
-  const copyId = () => {
-    const bbrcId = `BBRC${dbUser?.memberId?.replace('KBBRS-', '') || ''}`;
-    navigator.clipboard.writeText(bbrcId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast.success('আইডি কপি হয়েছে');
-  };
+const copyId = () => {
+     navigator.clipboard.writeText(getBbrcId());
+     setCopied(true);
+     setTimeout(() => setCopied(false), 2000);
+     toast.success('আইডি কপি হয়েছে');
+   };
 
   const formatPhoneAsEmail = (value) => {
     if (!value) return '';
@@ -85,11 +84,15 @@ const Profile = () => {
     return phoneWithPrefix + '@khanbari.somity';
   };
 
-  const getPhoneOrBbrcFromEmail = () => {
-    const email = auth.currentUser?.email;
-    if (!email) return '';
-    return email.split('@')[0];
-  };
+const getPhoneOrBbrcFromEmail = () => {
+     const email = auth.currentUser?.email;
+     if (!email) return '';
+     return email.split('@')[0];
+   };
+
+   const getBbrcId = () => {
+     return getPhoneOrBbrcFromEmail();
+   };
 
   const handleChangePin = async () => {
     const bbrc = pinForm.phone || getPhoneOrBbrcFromEmail();
@@ -192,11 +195,11 @@ const Profile = () => {
                   + রক্তের গ্রুপ যোগ করুন
                 </button>
               )}
-              <p className="text-xs text-blue-600 font-medium mt-0.5">{dbUser?.phone || getPhoneOrBbrcFromEmail()}</p>
-              <button onClick={copyId} className="flex items-center gap-1.5 mt-0.5 group">
-                <span className="text-xs text-gray-400 font-mono">BBRC{dbUser?.memberId?.replace('KBBRS-', '')}</span>
-                <Copy size={12} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
-              </button>
+              <p className="text-xs text-blue-600 font-medium mt-0.5">{dbUser?.phone || ''}</p>
+<button onClick={copyId} className="flex items-center gap-1.5 mt-0.5 group">
+                 <span className="text-xs text-gray-400 font-mono">{getBbrcId()}</span>
+                 <Copy size={12} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
+               </button>
 
               {isAdmin && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 mt-1">
@@ -244,7 +247,7 @@ const Profile = () => {
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">আইডি</p>
             </div>
             <div className="flex items-center gap-1.5">
-              <p className="text-sm font-semibold text-gray-800 truncate">BBRC{dbUser?.memberId?.replace('KBBRS-', '')}</p>
+              <p className="text-sm font-semibold text-gray-800 truncate">{getBbrcId()}</p>
               <button onClick={copyId} className="p-1 hover:bg-gray-100 rounded transition-colors">
                 <Copy size={12} className="text-gray-400" />
               </button>
@@ -259,7 +262,7 @@ const Profile = () => {
               </div>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">ফোন</p>
             </div>
-            <p className="text-sm font-semibold text-gray-800">{dbUser?.phone || getPhoneOrBbrcFromEmail()}</p>
+            <p className="text-sm font-semibold text-gray-800">{dbUser?.phone || ''}</p>
           </div>
 
           {/* Blood Group Card */}

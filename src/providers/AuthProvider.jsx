@@ -33,14 +33,20 @@ export const AuthProvider = ({ children }) => {
     console.log('[Auth] Token (first 50 chars):', token.substring(0, 50) + '...');
 
     try {
+      // Extract phone from email format (e.g., +8801749424565@khanbari.somity -> 01749424565)
+      // Return empty string for BBRC IDs (e.g., BBRC9996@khanbari.somity -> '')
+      const emailPrefix = firebaseUser.email?.split('@')[0] || '';
+      const phone = emailPrefix && !emailPrefix.startsWith('BBRC') 
+        ? emailPrefix.replace(/^\+88/, '0') 
+        : '';
+      
       const syncRes = await suppressAuthRedirect(() => api.post('/auth/sync', 
         { 
           uid: firebaseUser.uid, 
           name: firebaseUser.displayName || 'সদস্য', 
           email: firebaseUser.email, 
           photoURL: firebaseUser.photoURL || null,
-          // Extract phone from email format (e.g., +8801749424565@khanbari.somity -> 01749424565)
-          phone: firebaseUser.email?.split('@')[0]?.replace(/^\+88/, '0') || '' 
+          phone
         },
         { headers: { Authorization: `Bearer ${token}` } }
       ));
@@ -53,12 +59,18 @@ export const AuthProvider = ({ children }) => {
       const status = err.response?.status;
       const errorData = err.response?.data;
       
+      // Extract phone from email format
+      const emailPrefix = firebaseUser.email?.split('@')[0] || '';
+      const phone = emailPrefix && !emailPrefix.startsWith('BBRC') 
+        ? emailPrefix.replace(/^\+88/, '0') 
+        : '';
+      
       if (status === 500) {
         // Server error - try register fallback first
         console.log('[Auth] Server error, attempting register as fallback');
         try {
           const registerRes = await suppressAuthRedirect(() => api.post('/auth/register',
-            { uid: firebaseUser.uid, name: firebaseUser.displayName || 'সদস্য', phone: firebaseUser.email?.split('@')[0] || '' },
+            { uid: firebaseUser.uid, name: firebaseUser.displayName || 'সদস্য', phone },
             { headers: { Authorization: `Bearer ${token}` } }
           ));
           console.log('[Auth] Register fallback response:', registerRes.data);
@@ -80,7 +92,7 @@ export const AuthProvider = ({ children }) => {
         console.log('[Auth] Sync endpoint failed, attempting register as fallback');
         try {
           const registerRes = await suppressAuthRedirect(() => api.post('/auth/register',
-            { uid: firebaseUser.uid, name: firebaseUser.displayName || 'সদস্য', phone: firebaseUser.email?.split('@')[0] || '' },
+            { uid: firebaseUser.uid, name: firebaseUser.displayName || 'সদস্য', phone },
             { headers: { Authorization: `Bearer ${token}` } }
           ));
           console.log('[Auth] Register fallback response:', registerRes.data);

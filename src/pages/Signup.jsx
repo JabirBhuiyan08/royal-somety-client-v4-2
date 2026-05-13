@@ -16,8 +16,6 @@ const Signup = () => {
   const [confirmPin, setConfirmPin] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [availableNumbers, setAvailableNumbers] = useState([]);
-  const [loadingNumbers, setLoadingNumbers] = useState(false);
   const navigate = useNavigate();
   const { user, dbUser, loading: authLoading } = useAuth();
   const registeredRef = useRef(false);
@@ -29,48 +27,6 @@ const Signup = () => {
     }
   }, [user, dbUser, authLoading, navigate]);
 
-  // Load available BBRC numbers once on mount
-  useEffect(() => {
-    let mounted = true;
-    const controller = new AbortController();
-    
-    const fetchAvailableNumbers = async () => {
-      try {
-        setLoadingNumbers(true);
-        const token = localStorage.getItem('token');
-        const res = await api.get('/auth/available-bbrc-numbers', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          signal: controller.signal
-        });
-        if (mounted) {
-          if (res.data && res.data.numbers) {
-            setAvailableNumbers(res.data.numbers);
-          } else {
-            throw new Error('Invalid response format');
-          }
-        }
-      } catch (err) {
-        if (mounted && err.name !== 'AbortError') {
-          console.error('Failed to load available numbers:', err);
-          // Generate default numbers 1-500 if API fails
-          const nums = Array.from({ length: 500 }, (_, i) => 
-            String(i + 1).padStart(4, '0')
-          );
-          setAvailableNumbers(nums);
-        }
-      }
-      if (mounted) {
-        setLoadingNumbers(false);
-      }
-    };
-    fetchAvailableNumbers();
-    
-    return () => { 
-      mounted = false;
-      controller.abort();
-    };
-  }, []);
-
   // Format BBRC ID as email (Firebase requires email format for authentication)
   const formatBbrcAsEmail = (bbrcNumber) => {
     return `BBRC${String(bbrcNumber).padStart(4, '0')}@khanbari.somity`;
@@ -79,7 +35,7 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.bbrcNumber) {
-      toast.error('BBRC নম্বর নির্বাচন করুন');
+      toast.error('BBRC নম্বর দিন');
       return;
     }
     if (pin !== confirmPin) {
@@ -99,14 +55,14 @@ const Signup = () => {
       
       const token = await cred.user.getIdToken();
       
-      // Use suppressAuthRedirect to prevent redirect loops during registration
-      await suppressAuthRedirect(() => api.post('/auth/register', { 
-        uid: cred.user.uid, 
-        name: form.name, 
-        phone: `BBRC${String(form.bbrcNumber).padStart(4, '0')}`,
-        bloodGroup: form.bloodGroup 
-      },
-        { headers: { Authorization: `Bearer ${token}` } }));
+       // Use suppressAuthRedirect to prevent redirect loops during registration
+       await suppressAuthRedirect(() => api.post('/auth/register', { 
+         uid: cred.user.uid, 
+         name: form.name, 
+         phone: '',
+         bloodGroup: form.bloodGroup 
+       },
+         { headers: { Authorization: `Bearer ${token}` } }));
       
       registeredRef.current = true;
       toast.success('নিবন্ধন সফল! স্বাগতম!');
@@ -129,7 +85,7 @@ const Signup = () => {
       <div className="max-w-[480px] mx-auto w-full">
         {/* Logo & Title Section */}
         <div className="text-center mb-8">
-          <img src={} alt="Logo" className="w-16 h-16 mx-auto mb-4" />
+          {/* <img src={} alt="Logo" className="w-16 h-16 mx-auto mb-4" /> */}
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
             নতুন সদস্য নিবন্ধন
           </h1>
@@ -156,30 +112,24 @@ const Signup = () => {
             />
           </div>
 
-           {/* BBRC ID Selection */}
-           <div>
-             <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-               <Shield size={16} className="text-blue-500" />
-               BBRC নম্বর
-             </label>
-             {loadingNumbers ? (
-               <div className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-gray-500 text-sm">
-                 লোড হচ্ছে...
-               </div>
-             ) : (
-               <select 
-                 value={form.bbrcNumber} 
-                 onChange={e => setForm({ ...form, bbrcNumber: e.target.value })} 
-                 required 
-                 className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white appearance-none cursor-pointer"
-               >
-                 <option value="">BBRC নম্বর নির্বাচন করুন</option>
-                 {availableNumbers.map(num => (
-                   <option key={num} value={num}>BBRC{num}</option>
-                 ))}
-               </select>
-             )}
-           </div>
+          {/* BBRC ID Input */}
+          <div>
+            <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <Shield size={16} className="text-blue-500" />
+              BBRC নম্বর
+            </label>
+            <input 
+              type="text"
+              value={form.bbrcNumber}
+              onChange={e => {
+                const value = e.target.value.replace(/\D/g, '');
+                setForm({ ...form, bbrcNumber: value.slice(0, 4) });
+              }}
+              placeholder="BBRC নম্বর (৪ অंक)"
+              required
+              className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white"
+            />
+          </div>
 
           {/* Blood Group */}
           <div>

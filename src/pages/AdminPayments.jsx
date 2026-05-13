@@ -9,7 +9,7 @@ const BN_MONTHS = ['জানুয়ারি','ফেব্রুয়ার
 
 // Admin upload on behalf modal
 const AdminUploadModal = ({ members, onClose, axios, qc }) => {
-  const [form, setForm] = useState({ memberId: '', amount: '', paymentMonth: '', note: '', target: '' });
+  const [form, setForm] = useState({ memberId: '', amount: '', year: '', month: '', note: '', target: '' });
   const [selectedAmountIndex, setSelectedAmountIndex] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const now = new Date();
@@ -18,22 +18,21 @@ const AdminUploadModal = ({ members, onClose, axios, qc }) => {
   const yearOptions = Array.from({ length: 11 }, (_, i) => currentYear - i); // Current year + past 10 years
 
   // Generate month options based on selected year
-  const getMonthOptions = (selectedYear) => {
-    const year = selectedYear ? parseInt(selectedYear) : currentYear;
+  const getMonthOptions = () => {
+    const year = form.year ? parseInt(form.year) : currentYear;
     return Array.from({ length: 12 }, (_, i) => {
       const m = String(i + 1).padStart(2, '0');
       const monthDate = new Date(year, i, 1);
       const isFuture = monthDate > now;
-      return { 
-        value: `${year}-${m}`, 
+      return {
+        value: m,
         label: BN_MONTHS[i],
-        disabled: isFuture 
+        disabled: isFuture
       };
     });
   };
 
-  const selectedYear = form.paymentMonth ? form.paymentMonth.split('-')[0] : '';
-  const monthOptions = getMonthOptions(selectedYear);
+  const monthOptions = getMonthOptions();
 
   const { data: targets = [] } = useQuery({
     queryKey: ['admin-targets'],
@@ -43,34 +42,49 @@ const AdminUploadModal = ({ members, onClose, axios, qc }) => {
   // Filter members based on search query
   const filteredMembers = members.filter(member =>
     member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.memberId.toLowerCase().includes(searchQuery.toLowerCase())
+    member.memberId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (member.email && member.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (member.phone && member.phone.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const mutation = useMutation({
-    mutationFn: () => axios.post('/admin/transactions/admin-upload', form),
-    onSuccess: () => { 
-      toast.success('পেমেন্ট যোগ হয়েছে'); 
-      qc.invalidateQueries(['admin-transactions']); 
-      qc.invalidateQueries(['admin-stats']); 
-      qc.invalidateQueries(['targets']); 
-      onClose(); 
+    mutationFn: () => {
+      const paymentMonth = `${form.year}-${form.month}`;
+      const payload = {
+        memberId: form.memberId,
+        amount: parseInt(form.amount) || 0,
+        paymentMonth,
+        note: form.note || '',
+        target: form.target || ''
+      };
+      return axios.post('/admin/transactions/admin-upload', payload);
     },
-    onError: () => toast.error('যোগ করতে ব্যর্থ'),
+    onSuccess: () => {
+      toast.success('পেমেন্ট যোগ হয়েছে');
+      qc.invalidateQueries({ queryKey: ['admin-transactions'] });
+      qc.invalidateQueries({ queryKey: ['admin-stats'] });
+      qc.invalidateQueries({ queryKey: ['targets'] });
+      onClose();
+    },
+    onError: (error) => {
+      console.error('Error:', error.response?.data || error.message);
+      toast.error(error.response?.data?.message || 'যোগ করতে ব্যর্থ');
+    },
   });
 
   return (
-    <div className="fixed inset-0 z-50 mb-16 bg-black/50 backdrop-blur-sm flex items-end justify-center" onClick={onClose}>
-      <div className="w-full max-w-[480px] bg-white rounded-t-3xl shadow-2xl" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end justify-center" onClick={onClose}>
+      <div className="w-full pb-30 max-w-[480px] bg-white rounded-t-3xl shadow-2xl flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
         <div className="flex justify-center pt-3 pb-1">
           <div className="w-12 h-1.5 rounded-full bg-gray-300" />
         </div>
-        
+
         <div className="px-5 pt-2 pb-4 border-b border-gray-100">
           <h3 className="text-xl font-bold text-gray-800">সদস্যের পক্ষে পেমেন্ট যোগ করুন</h3>
           <p className="text-sm text-gray-500 mt-1">সদস্যের জন্য ম্যানুয়ালি পেমেন্ট এন্ট্রি</p>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {/* Member Selection with Search */}
           <div>
             <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
@@ -81,23 +95,41 @@ const AdminUploadModal = ({ members, onClose, axios, qc }) => {
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="নাম বা আইডি দিয়ে খুঁজুন"
+              placeholder="নাম, ইমেইল, ফোন বা আইডি দিয়ে খুঁজুন"
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 outline-none mb-2"
             />
-            <select 
-              value={form.memberId} 
-              onChange={e => setForm({...form, memberId: e.target.value})} 
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 outline-none"
-            >
-              <option value="">সদস্য বেছে নিন</option>
-              {filteredMembers.map(m => (
-                <option key={m._id} value={m._id}>
-                  {m.name} — {m.memberId} {m.phone ? `(${m.phone})` : ''}
-                </option>
-              ))}
-            </select>
-            {filteredMembers.length === 0 && searchQuery && (
-              <p className="text-xs text-gray-400 mt-1">কোনো সদস্য পাওয়া যায়নি</p>
+            {members.length === 0 ? (
+              <div className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 text-sm">
+                সদস্য লোড হচ্ছে...
+              </div>
+            ) : (
+              <select
+                value={form.memberId}
+                onChange={e => {
+                  setForm({...form, memberId: e.target.value});
+                  setSearchQuery('');
+                }}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 outline-none"
+              >
+                <option value="">সদস্য বেছে নিন</option>
+                {searchQuery ? (
+                  filteredMembers.length > 0 ? (
+                    filteredMembers.map(m => (
+                      <option key={m._id} value={m._id}>
+                        {m.name} — {m.memberId} {m.phone ? `(${m.phone})` : ''}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>কোনো সদস্য পাওয়া যায়নি</option>
+                  )
+                ) : (
+                  members.map(m => (
+                    <option key={m._id} value={m._id}>
+                      {m.name} — {m.memberId} {m.phone ? `(${m.phone})` : ''}
+                    </option>
+                  ))
+                )}
+              </select>
             )}
           </div>
 
@@ -107,17 +139,9 @@ const AdminUploadModal = ({ members, onClose, axios, qc }) => {
               <Calendar size={16} className="text-blue-500" />
               সাল
             </label>
-            <select 
-              value={selectedYear}
-              onChange={e => {
-                const year = e.target.value;
-                if (year) {
-                  // Reset month to January when year changes
-                  setForm({...form, paymentMonth: `${year}-01`});
-                } else {
-                  setForm({...form, paymentMonth: ''});
-                }
-              }}
+            <select
+              value={form.year}
+              onChange={e => setForm({...form, year: e.target.value, month: ''})}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 outline-none"
             >
               <option value="">সাল নির্বাচন করুন</option>
@@ -133,20 +157,15 @@ const AdminUploadModal = ({ members, onClose, axios, qc }) => {
               <Calendar size={16} className="text-blue-500" />
               মাস
             </label>
-            <select 
-              value={form.paymentMonth ? form.paymentMonth.split('-')[1] : ''}
-              onChange={e => {
-                const month = e.target.value;
-                if (month && selectedYear) {
-                  setForm({...form, paymentMonth: `${selectedYear}-${month}`});
-                }
-              }}
-              disabled={!selectedYear}
+            <select
+              value={form.month}
+              onChange={e => setForm({...form, month: e.target.value})}
+              disabled={!form.year}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">মাস নির্বাচন করুন</option>
               {monthOptions.map(o => (
-                <option key={o.value} value={o.value.split('-')[1]} disabled={o.disabled}>
+                <option key={o.value} value={o.value} disabled={o.disabled}>
                   {o.label}
                 </option>
               ))}
@@ -178,11 +197,11 @@ const AdminUploadModal = ({ members, onClose, axios, qc }) => {
                 </button>
               ))}
             </div>
-            <input 
-              type="number" 
-              value={form.amount} 
-              onChange={e => { setForm({...form, amount: e.target.value}); setSelectedAmountIndex(null); }} 
-              placeholder="অথবা নিজে লিখুন" 
+            <input
+              type="number"
+              value={form.amount}
+              onChange={e => { setForm({...form, amount: e.target.value}); setSelectedAmountIndex(null); }}
+              placeholder="অথবা নিজে লিখুন"
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 outline-none"
             />
           </div>
@@ -193,10 +212,10 @@ const AdminUploadModal = ({ members, onClose, axios, qc }) => {
               <FileText size={16} className="text-blue-500" />
               নোট
             </label>
-            <input 
-              value={form.note} 
-              onChange={e => setForm({...form, note: e.target.value})} 
-              placeholder="ঐচ্ছিক নোট" 
+            <input
+              value={form.note}
+              onChange={e => setForm({...form, note: e.target.value})}
+              placeholder="ঐচ্ছিক নোট"
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 outline-none"
             />
           </div>
@@ -208,9 +227,9 @@ const AdminUploadModal = ({ members, onClose, axios, qc }) => {
                 <Target size={16} className="text-blue-500" />
                 লক্ষ্য (ঐচ্ছিক)
               </label>
-              <select 
-                value={form.target} 
-                onChange={e => setForm({...form, target: e.target.value})} 
+              <select
+                value={form.target}
+                onChange={e => setForm({...form, target: e.target.value})}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-gray-50 outline-none"
               >
                 <option value="">কোনো লক্ষ্য নেই</option>
@@ -223,9 +242,27 @@ const AdminUploadModal = ({ members, onClose, axios, qc }) => {
             </div>
           )}
 
-          <button 
-            onClick={() => mutation.mutate()} 
-            disabled={!form.memberId || !form.amount || !form.paymentMonth || mutation.isPending} 
+          <button
+            onClick={() => {
+              if (!form.memberId) {
+                toast.error('সদস্য বেছে নিন');
+                return;
+              }
+              if (!form.year) {
+                toast.error('সাল বেছে নিন');
+                return;
+              }
+              if (!form.month) {
+                toast.error('মাস বেছে নিন');
+                return;
+              }
+              if (!form.amount) {
+                toast.error('পরিমাণ লিখুন');
+                return;
+              }
+              mutation.mutate();
+            }}
+            disabled={mutation.isPending}
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
           >
             {mutation.isPending ? 'যোগ হচ্ছে...' : 'পেমেন্ট যোগ করুন'}
@@ -239,12 +276,17 @@ const AdminUploadModal = ({ members, onClose, axios, qc }) => {
 const AdminPayments = () => {
   const axios = useAxios();
   const qc = useQueryClient();
-  const [filter, setFilter] = useState('pending');
+  const [filter, setFilter] = useState('all');
   const [showUpload, setShowUpload] = useState(false);
 
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['admin-transactions', filter],
-    queryFn: () => axios.get(`/admin/transactions?status=${filter}`).then(r => r.data.transactions),
+    queryFn: () => {
+      const url = filter === 'all'
+        ? '/admin/transactions'
+        : `/admin/transactions?status=${filter}`;
+      return axios.get(url).then(r => r.data.transactions);
+    },
   });
 
   const { data: members = [] } = useQuery({
@@ -254,27 +296,29 @@ const AdminPayments = () => {
 
   const approve = useMutation({
     mutationFn: (id) => axios.patch(`/admin/transactions/${id}/approve`),
-    onSuccess: () => { 
-      toast.success('অনুমোদিত'); 
-      qc.invalidateQueries(['admin-transactions']); 
-      qc.invalidateQueries(['admin-stats']); 
+    onSuccess: () => {
+      toast.success('অনুমোদিত');
+      qc.invalidateQueries({ queryKey: ['admin-transactions'] });
+      qc.invalidateQueries({ queryKey: ['admin-stats'] });
     },
     onError: () => toast.error('অনুমোদন ব্যর্থ'),
   });
 
   const reject = useMutation({
     mutationFn: (id) => axios.patch(`/admin/transactions/${id}/reject`),
-    onSuccess: () => { 
-      toast.success('বাতিল হয়েছে'); 
-      qc.invalidateQueries(['admin-transactions']); 
+    onSuccess: () => {
+      toast.success('বাতিল হয়েছে');
+      qc.invalidateQueries({ queryKey: ['admin-transactions'] });
+      qc.invalidateQueries({ queryKey: ['admin-stats'] });
     },
     onError: () => toast.error('বাতিল ব্যর্থ'),
   });
 
   const tabs = [
-    { key: 'pending',  label: 'অপেক্ষমাণ', color: 'orange', bg: 'bg-orange-50', activeBg: 'bg-orange-500', icon: <Clock size={14} /> },
+    { key: 'all',     label: 'সব',      color: 'blue',  bg: 'bg-blue-50',  activeBg: 'bg-blue-500',   icon: <Filter size={14} /> },
+    { key: 'pending', label: 'অপেক্ষমাণ', color: 'orange', bg: 'bg-orange-50', activeBg: 'bg-orange-500', icon: <Clock size={14} /> },
     { key: 'approved', label: 'অনুমোদিত',  color: 'green', bg: 'bg-green-50', activeBg: 'bg-green-500', icon: <CheckCircle size={14} /> },
-    { key: 'rejected', label: 'বাতিল',      color: 'red', bg: 'bg-red-50', activeBg: 'bg-red-500', icon: <XCircle size={14} /> },
+    { key: 'rejected', label: 'বাতিল',      color: 'red', bg: 'bg-red-50', activeBg: 'bg-red-500',     icon: <XCircle size={14} /> },
   ];
 
   const getStatusConfig = (status) => {
@@ -299,7 +343,7 @@ const AdminPayments = () => {
             <p className="text-xs text-gray-500">সদস্যদের পেমেন্ট অনুমোদন করুন</p>
           </div>
         </div>
-        <button 
+        <button
           onClick={() => setShowUpload(true)}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold shadow-md hover:shadow-lg active:scale-95 transition-all"
         >
@@ -311,8 +355,8 @@ const AdminPayments = () => {
       {/* Filter Tabs */}
       <div className="flex gap-2 mb-5">
         {tabs.map(t => (
-          <button 
-            key={t.key} 
+          <button
+            key={t.key}
             onClick={() => setFilter(t.key)}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
               filter === t.key
@@ -331,105 +375,97 @@ const AdminPayments = () => {
         <div className="flex justify-center py-16">
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
-      ) : transactions.length === 0 ? (
-        /* Empty State */
-        <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
-          <div className="text-5xl mb-3">📋</div>
-          <p className="text-gray-400 text-sm">কোনো লেনদেন নেই</p>
-        </div>
       ) : (
-        /* Transactions List */
-        <div className="space-y-3">
-          {transactions.map(tx => {
-            const statusConfig = getStatusConfig(tx.status);
-            return (
-              <div key={tx._id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                {/* User Info Row */}
-                <div className="flex items-center gap-3 mb-3">
-                  {/* Avatar */}
-                  <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center font-bold text-gray-600">
-                    {tx.user?.avatar ? (
-                      <img src={tx.user.avatar} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-lg">{tx.user?.name?.[0]}</span>
-                    )}
-                  </div>
-                  
-                  {/* User Details */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{tx.user?.name}</p>
-                    <p className="text-xs text-gray-500 font-mono">ID: {tx.user?.memberId}</p>
-                    {tx.paymentMonth && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 mt-1">
-                        <Calendar size={10} />
-                        {BN_MONTHS[parseInt(tx.paymentMonth.split('-')[1]) - 1]} {tx.paymentMonth.split('-')[0]}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {/* Amount */}
-                  <div className="text-right">
-                    <p className="font-bold text-green-600 text-lg">+৳{tx.amount?.toLocaleString()}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {new Date(tx.createdAt).toLocaleDateString('bn-BD')}
-                    </p>
-                    {tx.uploadedByAdmin && (
-                      <span className="inline-block px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 mt-1">
-                        অ্যাডমিন
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Note */}
-                {tx.note && (
-                  <div className="mb-3 px-3 py-2 rounded-xl bg-gray-50 border border-gray-100">
-                    <p className="text-xs text-gray-600">{tx.note}</p>
-                  </div>
-                )}
-
-                {/* Status Badge */}
-                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium mb-3 ${statusConfig.bg} ${statusConfig.text}`}>
-                  {statusConfig.icon}
-                  <span>{statusConfig.label}</span>
-                </div>
-
-                {/* Action Buttons (only for pending) */}
-                {tx.status === 'pending' && (
-                  <div className="flex gap-2 mt-3 pt-2 border-t border-gray-100">
-                    <button 
-                      onClick={() => approve.mutate(tx._id)} 
-                      disabled={approve.isPending}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 active:scale-95 transition-all"
-                    >
-                      <CheckCircle size={15} />
-                      <span>অনুমোদন</span>
-                    </button>
-                    <button 
-                      onClick={() => reject.mutate(tx._id)} 
-                      disabled={reject.isPending}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 active:scale-95 transition-all"
-                    >
-                      <XCircle size={15} />
-                      <span>বাতিল</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Status Message (for approved/rejected) */}
-                {tx.status !== 'pending' && (
-                  <div className="mt-2 pt-2 border-t border-gray-100">
-                    <div className={`flex items-center gap-1.5 text-xs ${statusConfig.text}`}>
-                      {statusConfig.icon}
-                      <span>
-                        {tx.status === 'approved' ? 'অনুমোদিত হয়েছে' : 'বাতিল হয়েছে'}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        /* Transactions Table */
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">সদস্য</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">আইডি</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">মাস</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">পরিমাণ</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">অবস্থা</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">কার্য</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {transactions.map(tx => {
+                  const statusConfig = getStatusConfig(tx.status);
+                  return (
+                    <tr key={tx._id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center font-bold text-gray-600 text-xs flex-shrink-0 overflow-hidden">
+                            {tx.user?.avatar ? (
+                              <img src={tx.user.avatar} className="w-full h-full object-cover" />
+                            ) : (
+                              tx.user?.name?.[0]
+                            )}
+                          </div>
+                          <span className="text-sm font-medium text-gray-800 truncate max-w-[120px]">{tx.user?.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs text-gray-500 font-mono">{tx.user?.memberId}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {tx.paymentMonth && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            <Calendar size={10} />
+                            {BN_MONTHS[parseInt(tx.paymentMonth.split('-')[1]) - 1]} {tx.paymentMonth.split('-')[0]}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="text-sm font-bold text-green-600">+৳{tx.amount?.toLocaleString()}</span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
+                          {statusConfig.icon}
+                          <span>{statusConfig.label}</span>
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {tx.status === 'pending' && (
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => approve.mutate(tx._id)}
+                              disabled={approve.isPending}
+                              className="p-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors disabled:opacity-50"
+                              title="অনুমোদন"
+                            >
+                              <CheckCircle size={14} />
+                            </button>
+                            <button
+                              onClick={() => reject.mutate(tx._id)}
+                              disabled={reject.isPending}
+                              className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
+                              title="বাতিল"
+                            >
+                              <XCircle size={14} />
+                            </button>
+                          </div>
+                        )}
+                        {tx.uploadedByAdmin && (
+                          <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 mt-1">
+                            অ্যাডমিন
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {transactions.length === 0 && !isLoading && (
+            <div className="text-center py-16">
+              <div className="text-5xl mb-3">📋</div>
+              <p className="text-gray-400 text-sm">কোনো লেনদেন নেই</p>
+            </div>
+          )}
         </div>
       )}
 
