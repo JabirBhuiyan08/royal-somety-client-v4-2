@@ -25,18 +25,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const normalizeEmailPrefix = (prefix) => {
-    if (!prefix) return '';
-    const normalized = prefix.toUpperCase();
-    if (normalized.startsWith('KBBRS-')) {
-      return 'BBRC' + prefix.slice(prefix.indexOf('-') + 1);
-    }
-    if (normalized.startsWith('BBRC')) {
-      return 'BBRC' + prefix.slice(4);
-    }
-    return prefix;
-  };
-
   // Sync Firebase user with backend
   const syncUser = async (firebaseUser) => {
     const token = await firebaseUser.getIdToken(true);
@@ -46,8 +34,8 @@ export const AuthProvider = ({ children }) => {
 
     try {
       // Extract phone from email format (e.g., +8801749424565@khanbari.somity -> 01749424565)
-      // Normalize old KBBRS IDs to BBRC format before deriving phone.
-      const emailPrefix = normalizeEmailPrefix(firebaseUser.email?.split('@')[0] || '');
+      // Return empty string for BBRC IDs (e.g., BBRC9996@khanbari.somity -> '')
+      const emailPrefix = firebaseUser.email?.split('@')[0] || '';
       const phone = emailPrefix && !emailPrefix.startsWith('BBRC') 
         ? emailPrefix.replace(/^\+88/, '0') 
         : '';
@@ -72,7 +60,7 @@ export const AuthProvider = ({ children }) => {
       const errorData = err.response?.data;
       
       // Extract phone from email format
-      const emailPrefix = normalizeEmailPrefix(firebaseUser.email?.split('@')[0] || '');
+      const emailPrefix = firebaseUser.email?.split('@')[0] || '';
       const phone = emailPrefix && !emailPrefix.startsWith('BBRC') 
         ? emailPrefix.replace(/^\+88/, '0') 
         : '';

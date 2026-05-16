@@ -6,7 +6,7 @@ import {
   CheckCircle, XCircle, Clock, Plus, Filter, Target, User, 
   Calendar, DollarSign, FileText, AlertCircle, Search, 
   Loader2, RefreshCw, Eye, Download, ChevronLeft, ChevronRight,
-  Wallet, TrendingUp, Banknote, Receipt
+  Wallet, TrendingUp, Banknote, Receipt, Bell
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { normalizeMemberId } from '../utils/constants';
@@ -446,6 +446,8 @@ const AdminPayments = () => {
         : `/admin/transactions?status=${filter}`;
       return axios.get(url).then(r => r.data.transactions);
     },
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
   });
 
   const { data: members = [] } = useQuery({
@@ -557,6 +559,19 @@ const AdminPayments = () => {
           </div>
         </div>
 
+        {/* Pending Request Notification */}
+        {pendingCount > 0 && (
+          <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-4 rounded-2xl shadow-sm mb-6 animate-pulse">
+            <div className="flex items-center gap-3">
+              <Bell size={24} className="text-white" />
+              <div>
+                <p className="font-bold text-lg">নতুন পেমেন্ট অনুরোধ</p>
+                <p className="opacity-90">{pendingCount} টি অনুমোদনের অপেক্ষায় আছে</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatsCard
@@ -652,6 +667,7 @@ const AdminPayments = () => {
                   {filteredTransactions.map(transaction => (
                     <TransactionRow
                       key={transaction._id}
+                      
                       transaction={transaction}
                       onApprove={handleApprove}
                       onReject={handleReject}

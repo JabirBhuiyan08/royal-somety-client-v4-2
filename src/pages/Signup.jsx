@@ -46,10 +46,6 @@ const Signup = () => {
       toast.error('৬ সংখ্যার পিন দিন');
       return;
     }
-    if (!form.bloodGroup) {
-      toast.error('রক্তের গ্রুপ নির্বাচন করুন');
-      return;
-    }
     setLoading(true);
     registeredRef.current = false;
     try {
@@ -63,6 +59,7 @@ const Signup = () => {
         uid: cred.user.uid, 
         name: form.name, 
         email,
+        phone: '',
         bloodGroup: form.bloodGroup 
       },
         { headers: { Authorization: `Bearer ${token}` } }));

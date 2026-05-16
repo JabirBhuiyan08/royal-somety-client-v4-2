@@ -26,6 +26,8 @@ const DepositModal = ({ isOpen, onClose }) => {
     mutationFn: (data) => axios.post('/member/transactions/deposit', data),
     onSuccess: () => {
       qc.invalidateQueries(['transactions']);
+      qc.invalidateQueries(['monthly-status']);
+      qc.invalidateQueries(['admin-stats']);
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
