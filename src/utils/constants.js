@@ -2,6 +2,11 @@
 
 export const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
+export const normalizeMemberId = (memberId) => {
+  if (!memberId) return '';
+  return memberId.startsWith('KBBRS-') ? memberId.replace(/^KBBRS-/, 'BBRC') : memberId;
+};
+
 export const ROLES = {
   ADMIN: 'admin',
   MEMBER: 'member',

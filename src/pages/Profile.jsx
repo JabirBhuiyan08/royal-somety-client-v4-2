@@ -70,7 +70,13 @@ const Profile = () => {
     onError: () => toast.error('আপডেট ব্যর্থ'),
   });
 
-const copyId = () => {
+const normalizeUserIdPrefix = (value) => {
+     if (!value) return '';
+     if (value.startsWith('KBBRS-')) return value.replace(/^KBBRS-/, 'BBRC');
+     return value;
+   };
+
+   const copyId = () => {
      navigator.clipboard.writeText(getBbrcId());
      setCopied(true);
      setTimeout(() => setCopied(false), 2000);
@@ -87,7 +93,7 @@ const copyId = () => {
 const getPhoneOrBbrcFromEmail = () => {
      const email = auth.currentUser?.email;
      if (!email) return '';
-     return email.split('@')[0];
+     return normalizeUserIdPrefix(email.split('@')[0]);
    };
 
    const getBbrcId = () => {
@@ -95,8 +101,9 @@ const getPhoneOrBbrcFromEmail = () => {
    };
 
   const handleChangePin = async () => {
-    const bbrc = pinForm.phone || getPhoneOrBbrcFromEmail();
-    if (!bbrc) {
+    const rawBbrc = pinForm.phone || getPhoneOrBbrcFromEmail();
+    const normalizedBbrc = normalizeUserIdPrefix(rawBbrc);
+    if (!normalizedBbrc) {
       toast.error('BBRC নম্বর দিন');
       return;
     }
@@ -115,7 +122,9 @@ const getPhoneOrBbrcFromEmail = () => {
 
     setChangingPin(true);
     try {
-      const email = bbrc.includes('@') ? bbrc : `BBRC${String(bbrc).padStart(4, '0')}@khanbari.somity`;
+      const email = normalizedBbrc.includes('@')
+        ? normalizedBbrc
+        : `BBRC${String(normalizedBbrc).padStart(4, '0')}@khanbari.somity`;
       await signInWithEmailAndPassword(auth, email, pinForm.previousPin);
       await updatePassword(auth.currentUser, pinForm.newPin);
       await axios.post('/member/change-pin', { newPin: pinForm.newPin });

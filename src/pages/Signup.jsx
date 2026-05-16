@@ -46,6 +46,10 @@ const Signup = () => {
       toast.error('৬ সংখ্যার পিন দিন');
       return;
     }
+    if (!form.bloodGroup) {
+      toast.error('রক্তের গ্রুপ নির্বাচন করুন');
+      return;
+    }
     setLoading(true);
     registeredRef.current = false;
     try {
@@ -55,14 +59,13 @@ const Signup = () => {
       
       const token = await cred.user.getIdToken();
       
-       // Use suppressAuthRedirect to prevent redirect loops during registration
-       await suppressAuthRedirect(() => api.post('/auth/register', { 
-         uid: cred.user.uid, 
-         name: form.name, 
-         phone: '',
-         bloodGroup: form.bloodGroup 
-       },
-         { headers: { Authorization: `Bearer ${token}` } }));
+      await suppressAuthRedirect(() => api.post('/auth/register', { 
+        uid: cred.user.uid, 
+        name: form.name, 
+        email,
+        bloodGroup: form.bloodGroup 
+      },
+        { headers: { Authorization: `Bearer ${token}` } }));
       
       registeredRef.current = true;
       toast.success('নিবন্ধন সফল! স্বাগতম!');

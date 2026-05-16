@@ -26,22 +26,40 @@ const ChatWindow = () => {
       return;
     }
 
-    const q = query(collection(db, CHAT_COLLECTION), orderBy('createdAt', 'asc'), limit(100));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        setMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        setLoading(false);
-        setOnline(true);
-        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-      },
-      (err) => {
-        console.error(err);
+    let unsub = () => {};
+    const subscribe = async () => {
+      try {
+        await user.getIdToken();
+      } catch (tokenError) {
+        console.error('[Chat] Token refresh failed:', tokenError);
         setOnline(false);
         setLoading(false);
-        toast.error('চ্যাট সংযোগ বিচ্ছিন্ন');
+        toast.error('চ্যাটে প্রবেশের জন্য পুনরায় লগইন করুন');
+        return;
       }
-    );
+
+      const q = query(collection(db, CHAT_COLLECTION), orderBy('createdAt', 'asc'), limit(100));
+      unsub = onSnapshot(
+        q,
+        (snap) => {
+          setMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+          setLoading(false);
+          setOnline(true);
+          setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        },
+        (err) => {
+          console.error('[Chat] Snapshot error:', err);
+          setOnline(false);
+          setLoading(false);
+          const message = err?.code === 'permission-denied'
+            ? 'চ্যাট অ্যাক্সেস নেই, পুনরায় লগইন করুন'
+            : 'চ্যাট সংযোগ বিচ্ছিন্ন';
+          toast.error(message);
+        }
+      );
+    };
+
+    subscribe();
     return () => unsub();
   }, [user]);
 

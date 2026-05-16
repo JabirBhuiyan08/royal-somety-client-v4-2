@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import useAxios from '../hooks/useAxios';
 import { Search, Phone, Heart, Users } from 'lucide-react';
-import { BLOOD_GROUPS } from '../utils/constants';
+import { BLOOD_GROUPS, normalizeMemberId } from '../utils/constants';
 import { useAuth } from '../providers/AuthProvider';
 
 const bloodColors = {
@@ -13,7 +13,7 @@ const bloodColors = {
 
 const Emergency = () => {
   const axios = useAxios();
-  const { dbUser } = useAuth();
+  const { dbUser, user } = useAuth();
   const [search, setSearch] = useState('');
   const [filterBlood, setFilterBlood] = useState('');
 
@@ -24,7 +24,10 @@ const Emergency = () => {
 
   const filtered = members.filter(m => {
     const q = search.toLowerCase();
-    return (!search || m.name?.toLowerCase().includes(q) || m.phone?.includes(search) || m.memberId?.includes(search))
+    return (!search || m.name?.toLowerCase().includes(q)
+      || m.phone?.includes(search)
+      || m.email?.toLowerCase().includes(q)
+      || m.memberId?.includes(search))
       && (!filterBlood || m.bloodGroup === filterBlood);
   });
 
@@ -40,8 +43,8 @@ const Emergency = () => {
           <p className="text-xs text-gray-500">সদস্যদের সাথে সরাসরি যোগাযোগ করুন</p>
         </div>
         <div className="flex items-center gap-2">
-          {dbUser?.memberId && (
-            <span className="text-xs text-gray-400 font-mono">{dbUser.memberId}</span>
+          {dbUser?.email && (
+            <span className="text-xs text-gray-400 font-mono">{dbUser.email}</span>
           )}
           {dbUser?.bloodGroup && (
             <div className="px-3 py-1.5 rounded-lg bg-red-100 text-red-600 text-sm font-bold">
@@ -66,7 +69,7 @@ const Emergency = () => {
       <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
         <button 
           onClick={() => setFilterBlood('')}
-          className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 ${
+          className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 ${
             !filterBlood 
               ? 'bg-blue-600 text-white shadow-md' 
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -80,7 +83,7 @@ const Emergency = () => {
             <button 
               key={bg} 
               onClick={() => setFilterBlood(bg === filterBlood ? '' : bg)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 ${
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 ${
                 filterBlood === bg 
                   ? 'text-white shadow-md' 
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -119,7 +122,7 @@ const Emergency = () => {
               <div key={m._id} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex items-center gap-3">
                 {/* Avatar */}
                 <div 
-                  className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-base"
+                  className="w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center font-bold text-base"
                   style={{ 
                     backgroundColor: c + '18', 
                     color: c,
@@ -146,14 +149,16 @@ const Emergency = () => {
                         🩸 {m.bloodGroup}
                       </span>
                     )}
-                    <span className="text-xs text-gray-400 font-mono">{m.memberId}</span>
+                    <span className="text-xs text-gray-400 font-mono">
+                   {user?.email ? user.email.split('@')[0] : 'N/A'}
+                    </span>
                   </div>
                 </div>
                 
                 {/* Call Button */}
                 <a
                   href={`tel:${m.phone}`}
-                  className="w-10 h-10 rounded-xl bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center flex-shrink-0 hover:from-green-600 hover:to-green-700 active:scale-95 transition-all shadow-md"
+                  className="w-10 h-10 rounded-xl bg-linear-to-r from-green-500 to-green-600 flex items-center justify-center shrink-0 hover:from-green-600 hover:to-green-700 active:scale-95 transition-all shadow-md"
                 >
                   <Phone size={16} className="text-white" />
                 </a>

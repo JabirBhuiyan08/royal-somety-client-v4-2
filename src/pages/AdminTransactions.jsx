@@ -5,6 +5,7 @@ import useAxios from '../hooks/useAxios';
 import {
   ChevronLeft, ChevronRight, Search, CreditCard, Calendar, User, DollarSign
 } from 'lucide-react';
+import { normalizeMemberId } from '../utils/constants';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -243,7 +244,7 @@ const AdminTransactions = () => {
                       </div>
                     </td>
                     <td className="px-3 py-2 text-xs text-gray-500 font-mono">
-                      {tx.user?.memberId || '—'}
+                      {normalizeMemberId(tx.user?.memberId) || '—'}
                     </td>
                     <td className="px-3 py-2">
                       {tx.paymentMonth ? (
@@ -278,7 +279,7 @@ const AdminTransactions = () => {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-gray-800">{tx.user?.name || 'N/A'}</p>
-                      <p className="text-[10px] text-gray-400">{tx.user?.memberId}</p>
+                      <p className="text-[10px] text-gray-400">{normalizeMemberId(tx.user?.memberId)}</p>
                     </div>
                   </div>
                   <span className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>
