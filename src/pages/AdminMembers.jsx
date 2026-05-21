@@ -242,7 +242,7 @@ const AdminMembers = () => {
   // Queries
   const { data: members = [], isLoading, error } = useQuery({
     queryKey: ['admin-members'],
-    queryFn: () => axios.get('/admin/members').then(res => res.data.members),
+    queryFn: () => axios.get('/admin/members').then(res => (res.data.members || []).filter(m => m.isActive !== false)),
   });
 
   // Mutations
@@ -250,7 +250,7 @@ const AdminMembers = () => {
     mutationFn: ({ id, role }) => axios.patch(`/admin/members/${id}/role`, { role }),
     onSuccess: () => {
       toast.success('ভূমিকা পরিবর্তন সফল হয়েছে');
-      queryClient.invalidateQueries(['admin-members']);
+      queryClient.invalidateQueries({ queryKey: ['admin-members'] });
       setExpandedId(null);
     },
     onError: () => toast.error('পরিবর্তন ব্যর্থ হয়েছে'),
@@ -258,9 +258,10 @@ const AdminMembers = () => {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => axios.delete(`/admin/members/${id}`),
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       toast.success('সদস্য নিষ্ক্রিয় করা হয়েছে');
-      queryClient.invalidateQueries(['admin-members']);
+      queryClient.setQueryData(['admin-members'], (old = []) => old.filter(member => member._id !== id));
+      queryClient.invalidateQueries({ queryKey: ['admin-members'] });
       setExpandedId(null);
     },
     onError: () => toast.error('নিষ্ক্রিয় করতে ব্যর্থ হয়েছে'),
