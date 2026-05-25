@@ -1,5 +1,5 @@
 // client/src/pages/AdminSettings.jsx
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useAxios from '../hooks/useAxios';
 import { 
@@ -424,12 +424,17 @@ const TargetCard = ({ target, onDelete, isDeleting }) => {
 
 // ==================== MAIN COMPONENT ====================
 
-const AdminSettings = () => {
+const AdminSettings = ({ initialTab = 'gallery' }) => {
   const axios = useAxios();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('gallery');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [deletingPhotoId, setDeletingPhotoId] = useState(null);
   const [deletingTargetId, setDeletingTargetId] = useState(null);
+
+  // Keep activeTab in sync if the route prop changes
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   // Queries
   const { 

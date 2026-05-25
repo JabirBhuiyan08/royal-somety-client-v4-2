@@ -10,7 +10,7 @@ import LoginPageImage from '../../assets/LoginPage.png';
 
 
 const Login = () => {
-  const [bbrcNumber, setBbrcNumber] = useState('');
+  const [BBRSNumber, setBBRSNumber] = useState('');
   const [pin, setPin] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,15 +46,15 @@ const Login = () => {
     }
   }, [user, dbUser, authLoading, navigate, justLoggedIn]);
 
-  // Format BBRC ID as email (Firebase requires email format for authentication)
-  const formatBbrcAsEmail = (bbrcNum) => {
-    return `BBRC${String(bbrcNum).padStart(4, '0')}@khanbari.somity`;
+  // Format BBRS ID as email (Firebase requires email format for authentication)
+  const formatBBRSAsEmail = (BBRSNum) => {
+    return `BBRS${String(BBRSNum).padStart(4, '0')}@khanbari.somity`;
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!bbrcNumber || !pin) {
-      toast.error('BBRC নম্বর এবং পিন দিন');
+    if (!BBRSNumber || !pin) {
+      toast.error('BBRS নম্বর এবং পিন দিন');
       return;
     }
     if (pin.length !== 6) {
@@ -63,9 +63,9 @@ const Login = () => {
     }
     setLoading(true);
     setJustLoggedIn(true);
-    console.log('[Login] Attempting login with BBRC:', bbrcNumber);
+    console.log('[Login] Attempting login with BBRS:', BBRSNumber);
     try {
-      const email = formatBbrcAsEmail(bbrcNumber);
+      const email = formatBBRSAsEmail(BBRSNumber);
       console.log('[Login] Calling Firebase signInWithEmailAndPassword');
       await signInWithEmailAndPassword(auth, email, pin);
       console.log('[Login] Firebase login successful');
@@ -135,17 +135,17 @@ const Login = () => {
 
         {/* Login Form */}
         <form onSubmit={handleLogin} className="space-y-5">
-          {/* BBRC ID Field */}
+          {/* BBRS ID Field */}
           <div>
             <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
               <Shield size={16} className="text-blue-500" />
-              BBRC নম্বর
+              BBRS নম্বর
             </label>
             <div className="relative">
               <input
                 type="text"
-                value={bbrcNumber}
-                onChange={e => setBbrcNumber(e.target.value)}
+                value={BBRSNumber}
+                onChange={e => setBBRSNumber(e.target.value)}
                 placeholder="১২৩৪"
                 required
                 className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-center text-lg"

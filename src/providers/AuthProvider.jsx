@@ -34,9 +34,9 @@ export const AuthProvider = ({ children }) => {
 
     try {
       // Extract phone from email format (e.g., +8801749424565@khanbari.somity -> 01749424565)
-      // Return empty string for BBRC IDs (e.g., BBRC9996@khanbari.somity -> '')
+      // Return empty string for BBRS IDs (e.g., BBRS9996@khanbari.somity -> '')
       const emailPrefix = firebaseUser.email?.split('@')[0] || '';
-      const phone = emailPrefix && !emailPrefix.startsWith('BBRC') 
+      const phone = emailPrefix && !emailPrefix.startsWith('BBRS') 
         ? emailPrefix.replace(/^\+88/, '0') 
         : '';
       
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
       
       // Extract phone from email format
       const emailPrefix = firebaseUser.email?.split('@')[0] || '';
-      const phone = emailPrefix && !emailPrefix.startsWith('BBRC') 
+      const phone = emailPrefix && !emailPrefix.startsWith('BBRS') 
         ? emailPrefix.replace(/^\+88/, '0') 
         : '';
       

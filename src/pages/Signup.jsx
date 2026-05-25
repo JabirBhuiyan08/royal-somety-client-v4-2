@@ -11,7 +11,7 @@ import { useAuth } from '../providers/AuthProvider';
 // import Logo from '..//assets/logo.png';
 
 const Signup = () => {
-  const [form, setForm] = useState({ name: '', bbrcNumber: '', bloodGroup: '' });
+  const [form, setForm] = useState({ name: '', bbrsNumber: '', bloodGroup: '' });
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [showPin, setShowPin] = useState(false);
@@ -27,15 +27,15 @@ const Signup = () => {
     }
   }, [user, dbUser, authLoading, navigate]);
 
-  // Format BBRC ID as email (Firebase requires email format for authentication)
-  const formatBbrcAsEmail = (bbrcNumber) => {
-    return `BBRC${String(bbrcNumber).padStart(4, '0')}@khanbari.somity`;
+  // Format BBRS ID as email (Firebase requires email format for authentication)
+  const formatBbrsAsEmail = (bbrsNumber) => {
+    return `BBRS${String(bbrsNumber).padStart(4, '0')}@khanbari.somity`;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.bbrcNumber) {
-      toast.error('BBRC নম্বর দিন');
+    if (!form.bbrsNumber) {
+      toast.error('BBRS নম্বর দিন');
       return;
     }
     if (pin !== confirmPin) {
@@ -49,7 +49,7 @@ const Signup = () => {
     setLoading(true);
     registeredRef.current = false;
     try {
-      const email = formatBbrcAsEmail(form.bbrcNumber);
+      const email = formatBbrsAsEmail(form.bbrsNumber);
       const cred = await createUserWithEmailAndPassword(auth, email, pin);
       await updateProfile(cred.user, { displayName: form.name });
       
@@ -63,14 +63,26 @@ const Signup = () => {
         bloodGroup: form.bloodGroup 
       },
         { headers: { Authorization: `Bearer ${token}` } }));
-      
+
+      // Defensive: explicitly clear phone in case the backend auto-fills it
+      // from the email (BBRS users have no real phone at signup time).
+      try {
+        const fd = new FormData();
+        fd.append('phone', '');
+        await suppressAuthRedirect(() => api.patch('/member/profile', fd,
+          { headers: { Authorization: `Bearer ${token}` } }));
+      } catch (clearErr) {
+        // Non-fatal — registration already succeeded.
+        console.warn('[Signup] Could not clear phone field:', clearErr?.message);
+      }
+
       registeredRef.current = true;
       toast.success('নিবন্ধন সফল! স্বাগতম!');
       navigate('/');
     } catch (err) {
       console.error(err);
       if (err.code === 'auth/email-already-in-use') {
-        toast.error('এই BBRC ID দিয়ে আগে অ্যাকাউন্ট তৈরি হয়েছে। লগইন করুন।');
+        toast.error('এই BBRS ID দিয়ে আগে অ্যাকাউন্ট তৈরি হয়েছে। লগইন করুন।');
         navigate('/login');
       } else {
         toast.error('নিবন্ধন ব্যর্থ হয়েছে');
@@ -112,20 +124,20 @@ const Signup = () => {
             />
           </div>
 
-          {/* BBRC ID Input */}
+          {/* BBRS ID Input */}
           <div>
             <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
               <Shield size={16} className="text-blue-500" />
-              BBRC নম্বর
+              BBRS নম্বর
             </label>
             <input 
               type="text"
-              value={form.bbrcNumber}
+              value={form.bbrsNumber}
               onChange={e => {
                 const value = e.target.value.replace(/\D/g, '');
-                setForm({ ...form, bbrcNumber: value.slice(0, 4) });
+                setForm({ ...form, bbrsNumber: value.slice(0, 4) });
               }}
-              placeholder="BBRC নম্বর (৪ অंक)"
+              placeholder="BBRS নম্বর (৪ অंक)"
               required
               className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white"
             />

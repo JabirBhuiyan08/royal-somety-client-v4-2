@@ -79,6 +79,8 @@ const AppRoutes = () => {
         <Route path="members"       element={<AdminMembers />} />
         <Route path="notifications" element={<AdminNotifications />} />
         <Route path="settings"      element={<AdminSettings />} />
+        <Route path="gallery"       element={<AdminSettings initialTab="gallery" />} />
+        <Route path="targets"       element={<AdminSettings initialTab="targets" />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

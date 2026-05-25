@@ -236,7 +236,24 @@ const Navbar = () => {
       >
         <div className="flex items-center justify-between px-4 py-3 max-w-[480px] mx-auto">
 
-          {/* ── Left: Chat + Notification ── */}
+          {/* ── Left: Logo + Name ── */}
+          <Link to="/" className="flex items-center gap-2 no-underline">
+            <img
+              src={LogoImage}
+              alt="Khanbari"
+              className="w-8 h-8 object-contain drop-shadow-sm"
+            />
+            <div className="text-left leading-tight">
+              <h1 className="text-sm font-bold text-gray-800 tracking-tight">
+                ভাই ভাই
+              </h1>
+              <p className="text-[9px] text-gray-400 mt-0.5">
+                রয়্যাল সমিতি <span className="opacity-60">· by Jabnox.com</span>
+              </p>
+            </div>
+          </Link>
+
+          {/* ── Right: Chat + Notification + Admin Menu ── */}
           <div className="flex items-center gap-2">
             <Link
               to="/chat"
@@ -270,49 +287,31 @@ const Navbar = () => {
                 </span>
               )}
             </Link>
+
+            {isAdmin && (
+              <button
+                onClick={() => setOpen(true)}
+                className="relative w-10 h-10 rounded-xl flex items-center justify-center
+                           bg-gradient-to-br from-blue-500 to-blue-600
+                           text-white shadow-md shadow-blue-500/20
+                           hover:shadow-lg hover:shadow-blue-500/30 active:scale-95
+                           transition-all duration-200"
+              >
+                <Menu size={18} />
+                {totalAlertCount > 0 && (
+                  <span
+                    className="absolute -top-1.5 -right-1.5
+                                 min-w-[18px] h-[18px] rounded-full
+                                 bg-gradient-to-br from-amber-400 to-red-500
+                                 text-white text-[9px] font-bold flex items-center justify-center
+                                 shadow-lg animate-pulse"
+                  >
+                    {totalAlertCount > 9 ? '9+' : totalAlertCount}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
-
-          {/* ── Center: Logo ── */}
-          <Link to="/" className="flex items-center gap-2 no-underline">
-            <img
-              src={LogoImage}
-              alt="Khanbari"
-              className="w-8 h-8 object-contain drop-shadow-sm"
-            />
-            <div className="text-center leading-tight">
-              <h1 className="text-sm font-bold text-gray-800 tracking-tight">
-                ভাই ভাই
-              </h1>
-              <p className="text-[9px] text-gray-400 mt-0.5">
-                রয়্যাল সমিতি <span className="opacity-60">· by Jabnox.com</span>
-              </p>
-            </div>
-          </Link>
-
-          {/* ── Right: Admin Menu Toggle ── */}
-          {isAdmin && (
-            <button
-              onClick={() => setOpen(true)}
-              className="relative w-10 h-10 rounded-xl flex items-center justify-center
-                         bg-gradient-to-br from-blue-500 to-blue-600
-                         text-white shadow-md shadow-blue-500/20
-                         hover:shadow-lg hover:shadow-blue-500/30 active:scale-95
-                         transition-all duration-200"
-            >
-              <Menu size={18} />
-              {totalAlertCount > 0 && (
-                <span
-                  className="absolute -top-1.5 -right-1.5
-                               min-w-[18px] h-[18px] rounded-full
-                               bg-gradient-to-br from-amber-400 to-red-500
-                               text-white text-[9px] font-bold flex items-center justify-center
-                               shadow-lg animate-pulse"
-                >
-                  {totalAlertCount > 9 ? '9+' : totalAlertCount}
-                </span>
-              )}
-            </button>
-          )}
         </div>
       </header>
 
