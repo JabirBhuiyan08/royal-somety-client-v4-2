@@ -40,6 +40,8 @@ const Login = () => {
       if (justLoggedIn) {
         toast.success('লগইন সফল!');
       }
+      // Set flag to show video ad after login
+      sessionStorage.setItem('show_video_ad', 'true');
       navigate('/', { replace: true });
     } else {
       console.log('[Login] Missing user or dbUser, staying on login');

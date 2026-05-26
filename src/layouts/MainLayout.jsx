@@ -2,6 +2,7 @@
 import { Outlet } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import BottomNav from '../components/BottomNav';
+import VideoAdModal from '../components/VideoAdModal';
 
 const MainLayout = () => (
   <div className="app-container overflow-x-hidden">
@@ -12,6 +13,7 @@ const MainLayout = () => (
       <p className="text-[10px]">© Copyright @ Jabnox</p>
     </div> */}
     <BottomNav />
+    <VideoAdModal />
   </div>
 );
 export default MainLayout;
