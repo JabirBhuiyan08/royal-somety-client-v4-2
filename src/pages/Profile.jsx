@@ -567,7 +567,7 @@ const Profile = () => {
           <div className="grid grid-cols-2 gap-3">
             <StatCard
               icon={Wallet}
-              label="আপনার ব্যালেন্স"
+              label="আমার ব্যালেন্স"
               value={`৳${myBalance.toLocaleString()}`}
               accent="green"
               loading={false}

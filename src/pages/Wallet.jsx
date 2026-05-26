@@ -319,7 +319,7 @@ const Wallet = () => {
       </div>
 
       {/* ══════════════════ USER CARD (overlapping) ══════════════════ */}
-      <div className="px-4 sm:px-6 -mt-20 relative z-10 space-y-3 w-full max-w-[480px] mx-auto">
+      <div className="-mt-20 relative z-10 space-y-3 w-full max-w-[480px] mx-auto">
         <Card className="p-4 relative overflow-hidden">
           <div className={`flex items-center gap-3 ${dbUser?.bloodGroup ? 'pr-16' : ''}`}>
             {/* Avatar */}
@@ -359,7 +359,7 @@ const Wallet = () => {
 
           {/* Blood drop badge */}
           {dbUser?.bloodGroup && (
-            <div className="absolute -top-1 right-1 sm:-top-2 sm:-right-2 flex flex-col items-center pointer-events-none">
+            <div className="absolute px-4 -top-1 right-1 sm:-top-2 sm:-right-2 flex flex-col items-center pointer-events-none">
               <div className="relative">
                 <svg width="50" height="60" viewBox="0 0 60 72" className="drop-shadow-lg sm:hidden">
                   <path
@@ -373,7 +373,7 @@ const Wallet = () => {
                     </linearGradient>
                   </defs>
                 </svg>
-                <svg width="60" height="72" viewBox="0 0 60 72" className="drop-shadow-lg hidden sm:block">
+                <svg width="50" height="70" viewBox="0 0 60 72" className="drop-shadow-lg hidden sm:block">
                   <path
                     d="M30 4 C30 4, 8 30, 8 46 C8 58, 18 68, 30 68 C42 68, 52 58, 52 46 C52 30, 30 4, 30 4 Z"
                     fill="url(#bloodGradLg)"

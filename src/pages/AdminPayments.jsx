@@ -113,6 +113,27 @@ const AdminUploadModal = ({ members, onClose, axios, queryClient }) => {
     queryFn: () => axios.get('/member/targets').then(r => r.data.targets),
   });
 
+  // Fetch existing payments for the selected member to prevent duplicate month payments
+  const { data: memberPayments = [] } = useQuery({
+    queryKey: ['member-payments', form.memberId],
+    queryFn: () => axios.get(`/admin/transactions?memberId=${form.memberId}`).then(r => r.data.transactions || []),
+    enabled: !!form.memberId,
+  });
+
+  // Get paid months for the selected year (only approved or pending payments count)
+  const paidMonths = useMemo(() => {
+    if (!form.year || !memberPayments.length) return new Set();
+    return new Set(
+      memberPayments
+        .filter(tx => 
+          tx.paymentMonth && 
+          tx.paymentMonth.startsWith(form.year) && 
+          (tx.status === 'approved' || tx.status === 'pending')
+        )
+        .map(tx => tx.paymentMonth.split('-')[1])
+    );
+  }, [memberPayments, form.year]);
+
   const filteredMembers = useMemo(() => {
     if (!searchQuery) return members;
     const query = searchQuery.toLowerCase();
@@ -129,10 +150,13 @@ const AdminUploadModal = ({ members, onClose, axios, queryClient }) => {
     return Array.from({ length: 12 }, (_, i) => {
       const monthDate = new Date(year, i, 1);
       const isFuture = monthDate > now;
+      const monthValue = String(i + 1).padStart(2, '0');
+      const alreadyPaid = paidMonths.has(monthValue);
       return {
-        value: String(i + 1).padStart(2, '0'),
+        value: monthValue,
         label: BN_MONTHS[i],
-        disabled: isFuture
+        disabled: isFuture || alreadyPaid,
+        alreadyPaid
       };
     });
   };
@@ -176,6 +200,11 @@ const AdminUploadModal = ({ members, onClose, axios, queryClient }) => {
       toast.error('বৈধ পরিমাণ লিখুন');
       return;
     }
+    // Double-check: prevent duplicate payment for same member + year + month
+    if (paidMonths.has(form.month)) {
+      toast.error('এই মাসে ইতিমধ্যে পেমেন্ট করা হয়েছে!');
+      return;
+    }
     mutation.mutate();
   };
 
@@ -207,7 +236,7 @@ const AdminUploadModal = ({ members, onClose, axios, queryClient }) => {
             </div>
             <select
               value={form.memberId}
-              onChange={e => setForm({...form, memberId: e.target.value})}
+              onChange={e => setForm({...form, memberId: e.target.value, month: ''})}
               className="w-full mt-2 px-3 py-2 rounded-lg border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-sm bg-white"
             >
               <option value="">সদস্য বেছে নিন</option>
@@ -250,10 +279,16 @@ const AdminUploadModal = ({ members, onClose, axios, queryClient }) => {
                 <option value="">মাস নির্বাচন</option>
                 {getMonthOptions().map(opt => (
                   <option key={opt.value} value={opt.value} disabled={opt.disabled}>
-                    {opt.label} {opt.disabled ? '(ভবিষ্যত)' : ''}
+                    {opt.label} {opt.alreadyPaid ? '✅ (পরিশোধিত)' : opt.disabled ? '(ভবিষ্যত)' : ''}
                   </option>
                 ))}
               </select>
+              {form.year && form.memberId && paidMonths.size > 0 && (
+                <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  {paidMonths.size} টি মাসে ইতিমধ্যে পেমেন্ট করা হয়েছে
+                </p>
+              )}
             </div>
           </div>
 
