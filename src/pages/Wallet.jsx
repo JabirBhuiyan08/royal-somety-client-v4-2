@@ -261,10 +261,10 @@ const Wallet = () => {
   const balance = dbUser?.balance || 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-24 overflow-x-hidden">
       {/* ══════════════════ TOP BAR ══════════════════ */}
       <div
-        className="relative pt-5 pb-32 px-4 sm:px-6"
+        className="relative pt-5 pb-32 px-4 sm:px-6 overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #6d28d9 0%, #8b5cf6 40%, #ec4899 100%)',
         }}
