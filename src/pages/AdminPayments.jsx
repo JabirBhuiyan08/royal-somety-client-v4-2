@@ -114,25 +114,29 @@ const AdminUploadModal = ({ members, onClose, axios, queryClient }) => {
   });
 
   // Fetch existing payments for the selected member to prevent duplicate month payments
-  const { data: memberPayments = [] } = useQuery({
-    queryKey: ['member-payments', form.memberId],
-    queryFn: () => axios.get(`/admin/transactions?memberId=${form.memberId}`).then(r => r.data.transactions || []),
-    enabled: !!form.memberId,
+  const { data: allTransactions = [] } = useQuery({
+    queryKey: ['all-transactions-for-duplicate-check'],
+    queryFn: () => axios.get('/admin/transactions').then(r => r.data.transactions || []),
   });
 
-  // Get paid months for the selected year (only approved or pending payments count)
+  // Get paid months for the selected member + year (only approved or pending payments count)
   const paidMonths = useMemo(() => {
-    if (!form.year || !memberPayments.length) return new Set();
+    if (!form.memberId || !form.year || !allTransactions.length) return new Set();
     return new Set(
-      memberPayments
-        .filter(tx => 
-          tx.paymentMonth && 
-          tx.paymentMonth.startsWith(form.year) && 
-          (tx.status === 'approved' || tx.status === 'pending')
-        )
+      allTransactions
+        .filter(tx => {
+          // Match by member - tx.user can be an object or string ID
+          const txUserId = typeof tx.user === 'object' ? tx.user?._id : tx.user;
+          return (
+            txUserId === form.memberId &&
+            tx.paymentMonth && 
+            tx.paymentMonth.startsWith(form.year) && 
+            (tx.status === 'approved' || tx.status === 'pending')
+          );
+        })
         .map(tx => tx.paymentMonth.split('-')[1])
     );
-  }, [memberPayments, form.year]);
+  }, [allTransactions, form.memberId, form.year]);
 
   const filteredMembers = useMemo(() => {
     if (!searchQuery) return members;
@@ -398,7 +402,7 @@ const TransactionRow = ({ transaction, onApprove, onReject, isApproving, isRejec
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-800">{transaction.user?.name}</p>
-            <p className="text-xs text-slate-400 font-mono">{normalizeMemberId(transaction.user?.memberId)}</p>
+            <p className="text-xs text-slate-400 font-mono">{(transaction.user?.email || '').replace(/\D/g, '') || transaction.user?.phone || ''}</p>
           </div>
         </div>
       </td>

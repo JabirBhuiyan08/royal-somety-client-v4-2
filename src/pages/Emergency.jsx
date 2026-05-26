@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import useAxios from '../hooks/useAxios';
-import { Search, Phone, Heart, Users } from 'lucide-react';
+import { Search, Phone, Heart, Users, Facebook, Instagram, MessageCircle } from 'lucide-react';
 import { BLOOD_GROUPS, normalizeMemberId } from '../utils/constants';
 import { useAuth } from '../providers/AuthProvider';
 
@@ -153,6 +153,31 @@ const Emergency = () => {
                    {user?.email ? user.email.split('@')[0] : 'N/A'}
                     </span>
                   </div>
+                  {/* Social Media Links */}
+                  {(m.socialMedia?.facebook || m.socialMedia?.instagram || m.socialMedia?.whatsapp || m.socialMedia?.imo) && (
+                    <div className="flex items-center gap-2 mt-1.5">
+                      {m.socialMedia?.facebook && (
+                        <a href={m.socialMedia.facebook} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition">
+                          <Facebook size={13} className="text-blue-600" />
+                        </a>
+                      )}
+                      {m.socialMedia?.instagram && (
+                        <a href={m.socialMedia.instagram} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-lg bg-pink-50 flex items-center justify-center hover:bg-pink-100 transition">
+                          <Instagram size={13} className="text-pink-600" />
+                        </a>
+                      )}
+                      {m.socialMedia?.whatsapp && (
+                        <a href={`https://wa.me/${m.socialMedia.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center hover:bg-green-100 transition">
+                          <MessageCircle size={13} className="text-green-600" />
+                        </a>
+                      )}
+                      {m.socialMedia?.imo && (
+                        <a href={`tel:${m.socialMedia.imo}`} className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center hover:bg-purple-100 transition">
+                          <Phone size={13} className="text-purple-600" />
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
                 
                 {/* Call Button */}

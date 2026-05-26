@@ -264,7 +264,7 @@ const Wallet = () => {
     <div className="min-h-screen bg-gray-50 pb-24 overflow-x-hidden">
       {/* ══════════════════ TOP BAR ══════════════════ */}
       <div
-        className="relative pt-5 pb-32 px-4 sm:px-6 overflow-hidden"
+        className="relative pt-4 pb-20 px-4 sm:px-6 overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #6d28d9 0%, #8b5cf6 40%, #ec4899 100%)',
         }}
@@ -276,35 +276,6 @@ const Wallet = () => {
              style={{ background: 'radial-gradient(circle, #fbbf24, transparent)' }} />
 
         <div className="relative w-full max-w-[480px] mx-auto">
-          {/* Title row */}
-          <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 mb-5">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => navigate('/chat')}
-                className="w-9 h-9 rounded-full bg-white/95 text-gray-700 flex items-center justify-center shadow-sm active:scale-95 transition-transform"
-                aria-label="চ্যাট"
-              >
-                <MessageCircle size={16} />
-              </button>
-              <button
-                onClick={() => navigate('/notifications')}
-                className="w-9 h-9 rounded-full bg-white/95 text-gray-700 flex items-center justify-center shadow-sm active:scale-95 transition-transform relative"
-                aria-label="নোটিফিকেশন"
-              >
-                <Bell size={16} />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1">
-                    {unreadCount > 9 ? '৯+' : toBnDigits(unreadCount)}
-                  </span>
-                )}
-              </button>
-            </div>
-            <h1 className="text-xs sm:text-sm font-bold text-pink-200 tracking-wide truncate text-center min-w-0">
-              {SOMITY_NAME}
-            </h1>
-            <div className="w-9" aria-hidden="true" />
-          </div>
-
           {/* Balance pill */}
           <div className="text-center">
             <p className="text-pink-100 text-xs font-semibold mb-2">আমার জমা</p>
@@ -319,7 +290,7 @@ const Wallet = () => {
       </div>
 
       {/* ══════════════════ USER CARD (overlapping) ══════════════════ */}
-      <div className="-mt-20 relative z-10 space-y-3 w-full max-w-[480px] mx-auto">
+      <div className="-mt-14 relative z-10 space-y-3 w-full max-w-[480px] mx-auto">
         <Card className="p-4 relative overflow-hidden">
           <div className={`flex items-center gap-3 ${dbUser?.bloodGroup ? 'pr-16' : ''}`}>
             {/* Avatar */}

@@ -5,7 +5,7 @@ import useAxios from '../hooks/useAxios';
 import { 
   Search, Users, Crown, Trash2, Shield, Bell, ChevronDown, 
   ChevronUp, Phone, Mail, Filter, X, AlertCircle, UserCheck, 
-  UserX, MoreVertical, Loader2 
+  UserX, MoreVertical, Loader2, Facebook, Instagram, MessageCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { normalizeMemberId } from '../utils/constants';
@@ -145,6 +145,37 @@ const MemberCard = ({ member, isExpanded, onToggleExpand, onDueReminder, onRoleC
                 {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
             </div>
+
+            {/* Social Media Links - always visible */}
+            {(member.socialMedia?.facebook || member.socialMedia?.instagram || member.socialMedia?.whatsapp || member.socialMedia?.imo || member.socialMedia?.x) && (
+              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                {member.socialMedia?.facebook && (
+                  <a href={member.socialMedia.facebook} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition">
+                    <Facebook size={13} className="text-blue-600" />
+                  </a>
+                )}
+                {member.socialMedia?.instagram && (
+                  <a href={member.socialMedia.instagram} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-lg bg-pink-50 flex items-center justify-center hover:bg-pink-100 transition">
+                    <Instagram size={13} className="text-pink-600" />
+                  </a>
+                )}
+                {member.socialMedia?.whatsapp && (
+                  <a href={`https://wa.me/${member.socialMedia.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center hover:bg-green-100 transition">
+                    <MessageCircle size={13} className="text-green-600" />
+                  </a>
+                )}
+                {member.socialMedia?.imo && (
+                  <a href={`tel:${member.socialMedia.imo}`} className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center hover:bg-purple-100 transition">
+                    <Phone size={13} className="text-purple-600" />
+                  </a>
+                )}
+                {member.socialMedia?.x && (
+                  <a href={member.socialMedia.x} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition">
+                    <span className="text-xs font-bold text-slate-600">𝕏</span>
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

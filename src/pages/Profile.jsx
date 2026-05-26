@@ -6,6 +6,7 @@ import {
   Camera, Copy, CheckCircle, User as UserIcon, Phone, Droplets, Edit2, LogOut,
   Wallet, Lock, Eye, EyeOff, ShieldCheck, ChevronRight, TrendingUp, Users, Coins,
   Bell, AlertCircle, Info, X, RefreshCw, ArrowUpRight, ArrowDownLeft, Inbox,
+  Facebook, Instagram, MessageCircle,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useAxios from '../hooks/useAxios';
@@ -289,6 +290,13 @@ const Profile = () => {
       if (form.name !== undefined) fd.append('name', form.name);
       if (form.phone !== undefined) fd.append('phone', form.phone);
       if (form.bloodGroup !== undefined) fd.append('bloodGroup', form.bloodGroup);
+      fd.append('socialMedia', JSON.stringify({
+        facebook: form.facebook || '',
+        instagram: form.instagram || '',
+        x: form.x || '',
+        whatsapp: form.whatsapp || '',
+        imo: form.imo || '',
+      }));
       return axios.patch('/member/profile', fd);
     },
     onSuccess: (res) => {
@@ -385,7 +393,12 @@ const Profile = () => {
     setForm({
       name: dbUser?.name || '',
       phone: dbUser?.phone || '',
-      bloodGroup: dbUser?.bloodGroup || ''
+      bloodGroup: dbUser?.bloodGroup || '',
+      facebook: dbUser?.socialMedia?.facebook || '',
+      instagram: dbUser?.socialMedia?.instagram || '',
+      x: dbUser?.socialMedia?.x || '',
+      whatsapp: dbUser?.socialMedia?.whatsapp || '',
+      imo: dbUser?.socialMedia?.imo || '',
     });
     setEditMode(true);
   };
@@ -679,19 +692,23 @@ const Profile = () => {
 
         {/* ── Personal Information ── */}
         <Card className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-bold text-gray-800">ব্যক্তিগত তথ্য</h3>
-            <button
-              onClick={openEdit}
-              className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
-            >
-              <Edit2 size={12} /> এডিট
-            </button>
-          </div>
+          <h3 className="text-sm font-bold text-gray-800 mb-2">ব্যক্তিগত তথ্য</h3>
           <div className="-my-1">
             <InfoRow icon={UserIcon} label="নাম" value={dbUser?.name} accent="blue" />
             <InfoRow icon={Phone} label="ফোন" value={dbUser?.phone} accent="purple" />
             <InfoRow icon={Droplets} label="রক্তের গ্রুপ" value={dbUser?.bloodGroup} accent="rose" />
+          </div>
+        </Card>
+
+        {/* ── Social Media ── */}
+        <Card className="p-4">
+          <h3 className="text-sm font-bold text-gray-800 mb-2">সোশ্যাল মিডিয়া</h3>
+          <div className="-my-1">
+            <InfoRow icon={Facebook} label="ফেসবুক" value={dbUser?.socialMedia?.facebook} accent="blue" />
+            <InfoRow icon={Instagram} label="ইনস্টাগ্রাম" value={dbUser?.socialMedia?.instagram} accent="rose" />
+            <InfoRow icon={MessageCircle} label="হোয়াটসঅ্যাপ" value={dbUser?.socialMedia?.whatsapp} accent="purple" />
+            <InfoRow icon={Phone} label="ইমো" value={dbUser?.socialMedia?.imo} accent="blue" />
+            <InfoRow icon={UserIcon} label="X (টুইটার)" value={dbUser?.socialMedia?.x} accent="gray" />
           </div>
         </Card>
 
@@ -777,7 +794,7 @@ const Profile = () => {
           onClick={() => !updateMutation.isPending && setEditMode(false)}
         >
           <div
-            className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl"
+            className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             {/* Drag handle */}
@@ -785,7 +802,7 @@ const Profile = () => {
               <div className="w-10 h-1 rounded-full bg-gray-300" />
             </div>
 
-            <div className="px-5 pt-4 pb-2 flex items-center justify-between">
+            <div className="px-5 pt-4 pb-2 flex items-center justify-between flex-shrink-0">
               <h3 className="text-lg font-bold text-gray-800">প্রোফাইল এডিট</h3>
               <button
                 onClick={() => setEditMode(false)}
@@ -796,6 +813,8 @@ const Profile = () => {
                 <X size={16} />
               </button>
             </div>
+
+            <div className="flex-1 overflow-y-auto">
 
             <div className="px-5 py-4 space-y-4">
               <div>
@@ -829,9 +848,63 @@ const Profile = () => {
                   ))}
                 </select>
               </div>
+
+              {/* Social Media Fields */}
+              <div className="pt-2 border-t border-gray-100">
+                <p className="text-xs font-bold text-gray-700 mb-3">সোশ্যাল মিডিয়া</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 mb-1.5 block">ফেসবুক (প্রোফাইল লিংক)</label>
+                    <input
+                      value={form.facebook || ''}
+                      onChange={e => setForm({ ...form, facebook: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                      placeholder="https://facebook.com/username"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 mb-1.5 block">ইনস্টাগ্রাম</label>
+                    <input
+                      value={form.instagram || ''}
+                      onChange={e => setForm({ ...form, instagram: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                      placeholder="https://instagram.com/username"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 mb-1.5 block">হোয়াটসঅ্যাপ নম্বর</label>
+                    <input
+                      value={form.whatsapp || ''}
+                      onChange={e => setForm({ ...form, whatsapp: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                      placeholder="০১XXXXXXXXX"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 mb-1.5 block">ইমো নম্বর</label>
+                    <input
+                      value={form.imo || ''}
+                      onChange={e => setForm({ ...form, imo: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                      placeholder="০১XXXXXXXXX"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 mb-1.5 block">X (টুইটার)</label>
+                    <input
+                      value={form.x || ''}
+                      onChange={e => setForm({ ...form, x: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                      placeholder="https://x.com/username"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+            </div>
+
+            <div className="px-5 py-4 border-t border-gray-100 flex gap-3 flex-shrink-0">
               <button
                 onClick={() => setEditMode(false)}
                 disabled={updateMutation.isPending}
