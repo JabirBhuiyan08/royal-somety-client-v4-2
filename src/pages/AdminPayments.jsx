@@ -242,7 +242,7 @@ const AdminUploadModal = ({ members, onClose, axios, queryClient }) => {
               <option value="">সদস্য বেছে নিন</option>
               {filteredMembers.map(m => (
                 <option key={m._id} value={m._id}>
-                  {m.name} — {m.email || m.phone || ''}
+                  {m.name} — {(m.email || '').replace(/\D/g, '') || m.phone || ''}
                 </option>
               ))}
             </select>
