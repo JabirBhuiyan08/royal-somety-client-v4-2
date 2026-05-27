@@ -133,6 +133,7 @@ const Wallet = () => {
   const [uploading, setUploading] = useState(false);
   const [photoLikes, setPhotoLikes] = useState({});
   const [likedPhotos, setLikedPhotos] = useState({});
+  const [monthPopup, setMonthPopup] = useState(null); // 'paid' | 'pending' | 'due' | null
   const fileRef = useRef(null);
 
   // ── Queries ──────────────────────────────────────────────────────────
@@ -259,6 +260,23 @@ const Wallet = () => {
   const pendingCount = monthlyData ? Object.values(monthlyData.months).filter(v => v.status === 'pending').length : 0;
   const dueCount = unpaidMonths.length;
   const balance = dbUser?.balance || 0;
+
+  // Detailed month lists for popup
+  const paidMonthsList = monthlyData
+    ? Object.entries(monthlyData.months)
+      .filter(([, info]) => info.status === 'approved')
+      .map(([key]) => ({ key, label: BN_MONTHS[parseInt(key.split('-')[1]) - 1], year: key.split('-')[0] }))
+    : [];
+  const pendingMonthsList = monthlyData
+    ? Object.entries(monthlyData.months)
+      .filter(([, info]) => info.status === 'pending')
+      .map(([key]) => ({ key, label: BN_MONTHS[parseInt(key.split('-')[1]) - 1], year: key.split('-')[0] }))
+    : [];
+  const dueMonthsList = monthlyData
+    ? Object.entries(monthlyData.months)
+      .filter(([key, info]) => info.status === 'unpaid' && new Date(`${key.split('-')[0]}-${key.split('-')[1]}-01`) <= new Date())
+      .map(([key]) => ({ key, label: BN_MONTHS[parseInt(key.split('-')[1]) - 1], year: key.split('-')[0] }))
+    : [];
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24 overflow-x-hidden">
@@ -405,15 +423,24 @@ const Wallet = () => {
             />
           </div>
           <div className="grid grid-cols-3 gap-1.5">
-            <span className="px-2 py-1 rounded-full bg-purple-50 border border-purple-100 text-purple-700 text-[10px] sm:text-[11px] font-semibold text-center truncate">
+            <button
+              onClick={() => setMonthPopup('paid')}
+              className="px-2 py-1 rounded-full bg-purple-50 border border-purple-100 text-purple-700 text-[10px] sm:text-[11px] font-semibold text-center truncate active:scale-95 transition-transform"
+            >
               পরিশোধ {toBnDigits(paidCount)}
-            </span>
-            <span className="px-2 py-1 rounded-full bg-amber-50 border border-amber-100 text-amber-700 text-[10px] sm:text-[11px] font-semibold text-center truncate">
+            </button>
+            <button
+              onClick={() => setMonthPopup('pending')}
+              className="px-2 py-1 rounded-full bg-amber-50 border border-amber-100 text-amber-700 text-[10px] sm:text-[11px] font-semibold text-center truncate active:scale-95 transition-transform"
+            >
               অপেক্ষমাণ {toBnDigits(pendingCount)}
-            </span>
-            <span className="px-2 py-1 rounded-full bg-rose-50 border border-rose-100 text-rose-700 text-[10px] sm:text-[11px] font-semibold text-center truncate">
+            </button>
+            <button
+              onClick={() => setMonthPopup('due')}
+              className="px-2 py-1 rounded-full bg-rose-50 border border-rose-100 text-rose-700 text-[10px] sm:text-[11px] font-semibold text-center truncate active:scale-95 transition-transform"
+            >
               বকেয়া {toBnDigits(dueCount)}
-            </span>
+            </button>
           </div>
         </Card>
 
@@ -574,6 +601,70 @@ const Wallet = () => {
       )}
 
       {showDepositModal && <DepositModal isOpen={showDepositModal} onClose={() => setShowDepositModal(false)} />}
+
+      {/* ══════════════════ MONTH DETAILS POPUP ══════════════════ */}
+      {monthPopup && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setMonthPopup(null)}>
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className={`px-4 py-3 flex items-center justify-between ${
+              monthPopup === 'paid' ? 'bg-purple-50' : monthPopup === 'pending' ? 'bg-amber-50' : 'bg-rose-50'
+            }`}>
+              <h3 className={`text-sm font-bold ${
+                monthPopup === 'paid' ? 'text-purple-800' : monthPopup === 'pending' ? 'text-amber-800' : 'text-rose-800'
+              }`}>
+                {monthPopup === 'paid' ? '✅ পরিশোধিত মাসসমূহ' : monthPopup === 'pending' ? '⏳ অপেক্ষমাণ মাসসমূহ' : '❌ বকেয়া মাসসমূহ'}
+              </h3>
+              <button
+                onClick={() => setMonthPopup(null)}
+                className="w-7 h-7 rounded-full bg-white/80 flex items-center justify-center text-gray-500 hover:bg-white transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Month List */}
+            <div className="px-4 py-3 max-h-[50vh] overflow-y-auto">
+              {(() => {
+                const list = monthPopup === 'paid' ? paidMonthsList : monthPopup === 'pending' ? pendingMonthsList : dueMonthsList;
+                if (list.length === 0) {
+                  return (
+                    <p className="text-center text-sm text-gray-400 py-6">
+                      {monthPopup === 'paid' ? 'কোনো পরিশোধিত মাস নেই' : monthPopup === 'pending' ? 'কোনো অপেক্ষমাণ মাস নেই' : 'কোনো বকেয়া নেই 🎉'}
+                    </p>
+                  );
+                }
+                return (
+                  <div className="space-y-2">
+                    {list.map(item => (
+                      <div
+                        key={item.key}
+                        className={`flex items-center justify-between px-3 py-2.5 rounded-xl border ${
+                          monthPopup === 'paid'
+                            ? 'bg-purple-50/50 border-purple-100'
+                            : monthPopup === 'pending'
+                            ? 'bg-amber-50/50 border-amber-100'
+                            : 'bg-rose-50/50 border-rose-100'
+                        }`}
+                      >
+                        <span className="text-sm font-medium text-gray-800">{item.label}</span>
+                        <span className="text-xs text-gray-500">{item.year}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-gray-100 text-center">
+              <p className="text-xs text-gray-500">
+                মোট: {toBnDigits(monthPopup === 'paid' ? paidMonthsList.length : monthPopup === 'pending' ? pendingMonthsList.length : dueMonthsList.length)} টি মাস
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
