@@ -17,30 +17,16 @@ const AdminTransactions = () => {
   const [sortBy, setSortBy] = useState('date'); // date, amount, name
   const [sortAsc, setSortAsc] = useState(false);
 
-  // Fetch each status separately using existing endpoints
-  const { data: pending = [], isLoading: loadingPending } = useQuery({
-    queryKey: ['admin-transactions', 'pending'],
-    queryFn: () => axios.get('/admin/transactions?status=pending').then(r => r.data.transactions || []),
+  // Fetch all transactions in a single call
+  const { data: allTransactions = [], isLoading } = useQuery({
+    queryKey: ['admin-transactions', 'all'],
+    queryFn: () => axios.get('/admin/transactions?limit=10000').then(r => {
+      const txs = r.data.transactions || [];
+      return txs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }),
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
   });
-
-  const { data: approved = [], isLoading: loadingApproved } = useQuery({
-    queryKey: ['admin-transactions', 'approved'],
-    queryFn: () => axios.get('/admin/transactions?status=approved').then(r => r.data.transactions || []),
-  });
-
-  const { data: rejected = [], isLoading: loadingRejected } = useQuery({
-    queryKey: ['admin-transactions', 'rejected'],
-    queryFn: () => axios.get('/admin/transactions?status=rejected').then(r => r.data.transactions || []),
-  });
-
-  const isLoading = loadingPending || loadingApproved || loadingRejected;
-
-  // Combine all transactions
-  const allTransactions = useMemo(() => {
-    return [...pending, ...approved, ...rejected]
-      .filter(tx => tx != null)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [pending, approved, rejected]);
 
   // Compute stats
   const stats = useMemo(() => {
